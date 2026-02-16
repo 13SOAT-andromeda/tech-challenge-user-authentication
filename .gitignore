@@ -1,0 +1,51 @@
+# Go build artifacts
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+*.prof
+*.coverprofile
+*.cover
+*.cgo1.go
+*.cgo2.c
+*.cgo2.o
+*.cgo3.c
+*.cgo3.o
+*.cgo4.c
+*.cgo4.o
+*.cgo5.c
+*.cgo5.o
+*.cgo6.c
+*.cgo6.o
+*.o
+*.a
+*.lib
+
+# Go workspaces
+/go.work
+/go.work.sum
+
+# Vendor
+/vendor/
+
+# Go module cache
+/pkg/
+
+# Local environment files
+.env
+.env.*
+
+# Editors and OS files
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+
+# Logs
+*.log
+
+# Archives
+*.zip
