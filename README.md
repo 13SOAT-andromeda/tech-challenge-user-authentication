@@ -38,3 +38,4 @@ This project is a simple Go application using the Gin framework, designed to run
 ## Development
 
 To modify the response, edit `go-gin-lambda/main.go` and run `./deploy.sh` again.
+

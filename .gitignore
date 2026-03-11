@@ -23,6 +23,7 @@
 *.o
 *.a
 *.lib
+*.idea
 
 # Go workspaces
 /go.work
