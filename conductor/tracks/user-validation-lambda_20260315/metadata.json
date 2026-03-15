@@ -1,8 +1,0 @@
-{
-  "track_id": "user-validation-lambda_20260315",
-  "type": "feature",
-  "status": "new",
-  "created_at": "2026-03-15T10:00:00Z",
-  "updated_at": "2026-03-15T10:00:00Z",
-  "description": "Implement user validation lambda for authentication with CPF validation, RDS check, and DynamoDB token storage."
-}
