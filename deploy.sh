@@ -28,7 +28,7 @@ PARENT_RESOURCE_ID=$(awslocal apigateway get-resources --rest-api-id $API_ID --q
 # Create /auth resource
 RESOURCE_ID=$(awslocal apigateway create-resource --rest-api-id $API_ID --parent-id $PARENT_RESOURCE_ID --path-part 'auth' --query 'id' --output text)
 
-# Create GET method (since we receive CPF in header)
+# Create GET method (since we receive Document in header)
 awslocal apigateway put-method --rest-api-id $API_ID --resource-id $RESOURCE_ID --http-method GET --authorization-type "NONE"
 
 # Integrate with Lambda
@@ -46,5 +46,5 @@ awslocal apigateway create-deployment --rest-api-id $API_ID --stage-name dev
 echo "---------------------------------------------------"
 echo "Deployment Complete!"
 echo "Test endpoint:"
-echo "curl -H 'x-cpf: 123.456.789-00' http://localhost:4566/restapis/$API_ID/dev/_user_request_/auth"
+echo "curl -H 'x-Document: 123.456.789-00' http://localhost:4566/restapis/$API_ID/dev/_user_request_/auth"
 echo "---------------------------------------------------"

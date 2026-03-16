@@ -6,5 +6,5 @@ import (
 )
 
 type UserRepository interface {
-	GetByCPF(ctx context.Context, cpf string) (*domain.User, error)
+	GetByDocument(ctx context.Context, Document string) (*domain.User, error)
 }

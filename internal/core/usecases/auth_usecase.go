@@ -29,14 +29,14 @@ func NewAuthUseCase(userRepo ports.UserRepository, tokenRepo ports.TokenReposito
 	}
 }
 
-var cpfRegex = regexp.MustCompile(`^(\d{3}\.\d{3}\.\d{3}\-\d{2})?$`)
+var DocumentRegex = regexp.MustCompile(`^(\d{3}\.\d{3}\.\d{3}\-\d{2})?$`)
 
-func (uc *AuthUseCase) Authenticate(ctx context.Context, cpf string) (string, error) {
-	if !cpfRegex.MatchString(cpf) {
-		return "", errors.New("invalid CPF format")
+func (uc *AuthUseCase) Authenticate(ctx context.Context, Document string) (string, error) {
+	if !DocumentRegex.MatchString(Document) {
+		return "", errors.New("invalid Document format")
 	}
 
-	user, err := uc.userRepo.GetByCPF(ctx, cpf)
+	user, err := uc.userRepo.GetByDocument(ctx, Document)
 	if err != nil {
 		return "", err
 	}
@@ -51,7 +51,7 @@ func (uc *AuthUseCase) Authenticate(ctx context.Context, cpf string) (string, er
 	// Generate JWT
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"sub": user.ID,
-		"cpf": user.CPF,
+		"Document": user.Document,
 		"jti": jti,
 		"exp": time.Now().Add(24 * time.Hour).Unix(),
 	})

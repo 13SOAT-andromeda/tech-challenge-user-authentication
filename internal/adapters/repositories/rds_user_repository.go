@@ -13,7 +13,7 @@ func NewRDSUserRepository() *RDSUserRepository {
 	return &RDSUserRepository{}
 }
 
-func (r *RDSUserRepository) GetByCPF(ctx context.Context, cpf string) (*domain.User, error) {
+func (r *RDSUserRepository) GetByDocument(ctx context.Context, Document string) (*domain.User, error) {
 	// Logic not implemented as per spec
 	return nil, nil
 }

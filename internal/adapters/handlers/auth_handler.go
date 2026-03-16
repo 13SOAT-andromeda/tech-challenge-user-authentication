@@ -21,12 +21,12 @@ func NewAuthHandler(uc *usecases.AuthUseCase) *AuthHandler {
 }
 
 func (h *AuthHandler) Handle(ctx context.Context, req events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
-	cpf := req.Headers["x-cpf"]
-	if cpf == "" {
-		return h.errorResponse(http.StatusBadRequest, "x-cpf header is required"), nil
+	Document := req.Headers["x-Document"]
+	if Document == "" {
+		return h.errorResponse(http.StatusBadRequest, "x-Document header is required"), nil
 	}
 
-	token, err := h.authUseCase.Authenticate(ctx, cpf)
+	token, err := h.authUseCase.Authenticate(ctx, Document)
 	if err != nil {
 		return h.errorResponse(http.StatusUnauthorized, err.Error()), nil
 	}

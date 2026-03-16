@@ -8,11 +8,11 @@ import (
 )
 
 type mockUserRepository struct {
-	getUserFunc func(ctx context.Context, cpf string) (*domain.User, error)
+	getUserFunc func(ctx context.Context, Document string) (*domain.User, error)
 }
 
-func (m *mockUserRepository) GetByCPF(ctx context.Context, cpf string) (*domain.User, error) {
-	return m.getUserFunc(ctx, cpf)
+func (m *mockUserRepository) GetByDocument(ctx context.Context, Document string) (*domain.User, error) {
+	return m.getUserFunc(ctx, Document)
 }
 
 type mockTokenRepository struct {
@@ -26,17 +26,17 @@ func (m *mockTokenRepository) Save(ctx context.Context, token *domain.Token) err
 func TestAuthUseCase_Authenticate(t *testing.T) {
 	ctx := context.Background()
 
-	t.Run("should fail with invalid CPF format", func(t *testing.T) {
+	t.Run("should fail with invalid Document format", func(t *testing.T) {
 		uc := NewAuthUseCase(nil, nil, "secret")
-		_, err := uc.Authenticate(ctx, "invalid-cpf")
+		_, err := uc.Authenticate(ctx, "invalid-Document")
 		if err == nil {
-			t.Fatal("expected error for invalid CPF format")
+			t.Fatal("expected error for invalid Document format")
 		}
 	})
 
 	t.Run("should fail if user not found", func(t *testing.T) {
 		mockUserRepo := &mockUserRepository{
-			getUserFunc: func(ctx context.Context, cpf string) (*domain.User, error) {
+			getUserFunc: func(ctx context.Context, Document string) (*domain.User, error) {
 				return nil, errors.New("user not found")
 			},
 		}
@@ -49,8 +49,8 @@ func TestAuthUseCase_Authenticate(t *testing.T) {
 
 	t.Run("should fail if user is inactive", func(t *testing.T) {
 		mockUserRepo := &mockUserRepository{
-			getUserFunc: func(ctx context.Context, cpf string) (*domain.User, error) {
-				return &domain.User{ID: 1, CPF: cpf, IsActive: false}, nil
+			getUserFunc: func(ctx context.Context, Document string) (*domain.User, error) {
+				return &domain.User{ID: 1, Document: Document, IsActive: false}, nil
 			},
 		}
 		uc := NewAuthUseCase(mockUserRepo, nil, "secret")
@@ -62,8 +62,8 @@ func TestAuthUseCase_Authenticate(t *testing.T) {
 
 	t.Run("should succeed and save token if user is active", func(t *testing.T) {
 		mockUserRepo := &mockUserRepository{
-			getUserFunc: func(ctx context.Context, cpf string) (*domain.User, error) {
-				return &domain.User{ID: 1, CPF: cpf, IsActive: true}, nil
+			getUserFunc: func(ctx context.Context, Document string) (*domain.User, error) {
+				return &domain.User{ID: 1, Document: Document, IsActive: true}, nil
 			},
 		}
 		tokenSaved := false
