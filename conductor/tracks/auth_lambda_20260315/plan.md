@@ -17,10 +17,10 @@
 - [x] Task: Define Repository interfaces in `internal/core/ports/`. (7688671)
     - [x] `UserRepository` for RDS.
     - [x] `TokenRepository` for DynamoDB.
-- [ ] Task: Implement Auth UseCase in `internal/core/usecases/`.
-    - [ ] Logic for CPF regex validation.
-    - [ ] Logic for user status check.
-    - [ ] Logic for JWT generation (24h expiration, include jti).
+- [x] Task: Implement Auth UseCase in `internal/core/usecases/`. (b9f556f)
+    - [x] Logic for CPF regex validation.
+    - [x] Logic for user status check.
+    - [x] Logic for JWT generation (24h expiration, include jti).
 - [ ] Task: Conductor - User Manual Verification 'Phase 2: Domain and Core Logic' (Protocol in workflow.md)
 
 ## Phase 3: Adapters and Infrastructure
