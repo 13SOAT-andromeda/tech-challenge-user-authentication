@@ -23,7 +23,7 @@
     - [x] Logic for JWT generation (24h expiration, include jti).
 - [x] Task: Conductor - User Manual Verification 'Phase 2: Domain and Core Logic' (Protocol in workflow.md)
 
-## Phase 3: Adapters and Infrastructure
+## Phase 3: Adapters and Infrastructure [checkpoint: 8ae49dd]
 - [x] Task: Create RDS Repository integration file in `internal/adapters/repositories/rds_user_repository.go`. (48447ee)
     - [x] Logic not implemented, only file structure and model mapping.
 - [x] Task: Create DynamoDB Repository integration file in `internal/adapters/repositories/dynamo_token_repository.go`. (9111890)
@@ -31,7 +31,7 @@
     - [x] Logic not implemented, only file structure and model mapping.
 - [x] Task: Implement Lambda Handler in `internal/adapters/handlers/auth_handler.go`. (7af41e3)
     - [x] Use standard AWS Lambda handler (no Gin adapter).
-- [~] Task: Conductor - User Manual Verification 'Phase 3: Adapters and Infrastructure' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Phase 3: Adapters and Infrastructure' (Protocol in workflow.md)
 
 ## Phase 4: Entry Point and Deployment
 - [ ] Task: Implement `main.go` in `cmd/auth/`.
