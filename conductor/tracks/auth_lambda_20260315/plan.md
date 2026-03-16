@@ -1,7 +1,7 @@
 # Implementation Plan: User Authentication Lambda
 
 ## Phase 1: Cleanup and Structure Refactoring
-- [~] Task: Remove existing `go-gin-lambda` directory and artifacts.
+- [x] Task: Remove existing `go-gin-lambda` directory and artifacts. (140f03e)
 - [ ] Task: Initialize new folder structure following Clean Architecture.
     - [ ] Create `cmd/auth/`
     - [ ] Create `internal/core/domain/`, `internal/core/usecases/`, `internal/core/ports/`
