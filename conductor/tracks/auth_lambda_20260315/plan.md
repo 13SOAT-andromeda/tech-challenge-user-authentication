@@ -11,9 +11,9 @@
 - [x] Task: Conductor - User Manual Verification 'Phase 1: Cleanup and Structure Refactoring' (Protocol in workflow.md)
 
 ## Phase 2: Domain and Core Logic
-- [ ] Task: Define User and Token domain entities in `internal/core/domain/`.
-    - [ ] Follow RDS User model from reference repository.
-    - [ ] Define Token entity with `token_id` and `user_id`.
+- [x] Task: Define User and Token domain entities in `internal/core/domain/`. (82e683c)
+    - [x] Follow RDS User model from reference repository.
+    - [x] Define Token entity with `token_id` and `user_id`.
 - [ ] Task: Define Repository interfaces in `internal/core/ports/`.
     - [ ] `UserRepository` for RDS.
     - [ ] `TokenRepository` for DynamoDB.
