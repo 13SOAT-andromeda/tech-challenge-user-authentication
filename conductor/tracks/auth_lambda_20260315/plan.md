@@ -1,6 +1,6 @@
 # Implementation Plan: User Authentication Lambda
 
-## Phase 1: Cleanup and Structure Refactoring
+## Phase 1: Cleanup and Structure Refactoring [checkpoint: dafa9e7]
 - [x] Task: Remove existing `go-gin-lambda` directory and artifacts. (140f03e)
 - [x] Task: Initialize new folder structure following Clean Architecture. (ed6615a)
     - [x] Create `cmd/auth/`
@@ -8,7 +8,7 @@
     - [x] Create `internal/adapters/handlers/`, `internal/adapters/repositories/`
     - [x] Create `internal/infrastructure/`
 - [x] Task: Initialize `go.mod` and install dependencies (`aws-sdk-go-v2`, `golang-jwt`). (4aabc9d)
-- [ ] Task: Conductor - User Manual Verification 'Phase 1: Cleanup and Structure Refactoring' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Phase 1: Cleanup and Structure Refactoring' (Protocol in workflow.md)
 
 ## Phase 2: Domain and Core Logic
 - [ ] Task: Define User and Token domain entities in `internal/core/domain/`.
