@@ -31,7 +31,7 @@
     - [x] Logic not implemented, only file structure and model mapping.
 - [x] Task: Implement Lambda Handler in `internal/adapters/handlers/auth_handler.go`. (7af41e3)
     - [x] Use standard AWS Lambda handler (no Gin adapter).
-- [ ] Task: Conductor - User Manual Verification 'Phase 3: Adapters and Infrastructure' (Protocol in workflow.md)
+- [~] Task: Conductor - User Manual Verification 'Phase 3: Adapters and Infrastructure' (Protocol in workflow.md)
 
 ## Phase 4: Entry Point and Deployment
 - [ ] Task: Implement `main.go` in `cmd/auth/`.
