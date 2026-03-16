@@ -34,9 +34,9 @@
 - [x] Task: Conductor - User Manual Verification 'Phase 3: Adapters and Infrastructure' (Protocol in workflow.md)
 
 ## Phase 4: Entry Point and Deployment
-- [ ] Task: Implement `main.go` in `cmd/auth/`.
-    - [ ] Dependency injection for repositories and usecases.
-    - [ ] Lambda start logic.
+- [x] Task: Implement `main.go` in `cmd/auth/`. (e1943d7)
+    - [x] Dependency injection for repositories and usecases.
+    - [x] Lambda start logic.
 - [ ] Task: Update `deploy.sh` and `Makefile` for LocalStack deployment.
     - [ ] Configure `deploy.sh` to target LocalStack endpoints.
     - [ ] Configure `Makefile` for LocalStack-only deployment commands.
