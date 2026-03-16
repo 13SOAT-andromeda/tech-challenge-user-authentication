@@ -2,11 +2,11 @@
 
 ## Phase 1: Cleanup and Structure Refactoring
 - [x] Task: Remove existing `go-gin-lambda` directory and artifacts. (140f03e)
-- [ ] Task: Initialize new folder structure following Clean Architecture.
-    - [ ] Create `cmd/auth/`
-    - [ ] Create `internal/core/domain/`, `internal/core/usecases/`, `internal/core/ports/`
-    - [ ] Create `internal/adapters/handlers/`, `internal/adapters/repositories/`
-    - [ ] Create `internal/infrastructure/`
+- [x] Task: Initialize new folder structure following Clean Architecture. (ed6615a)
+    - [x] Create `cmd/auth/`
+    - [x] Create `internal/core/domain/`, `internal/core/usecases/`, `internal/core/ports/`
+    - [x] Create `internal/adapters/handlers/`, `internal/adapters/repositories/`
+    - [x] Create `internal/infrastructure/`
 - [ ] Task: Initialize `go.mod` and install dependencies (`aws-sdk-go-v2`, `golang-jwt`).
 - [ ] Task: Conductor - User Manual Verification 'Phase 1: Cleanup and Structure Refactoring' (Protocol in workflow.md)
 
