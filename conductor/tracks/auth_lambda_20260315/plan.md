@@ -33,11 +33,11 @@
     - [x] Use standard AWS Lambda handler (no Gin adapter).
 - [x] Task: Conductor - User Manual Verification 'Phase 3: Adapters and Infrastructure' (Protocol in workflow.md)
 
-## Phase 4: Entry Point and Deployment
+## Phase 4: Entry Point and Deployment [checkpoint: 881fdb3]
 - [x] Task: Implement `main.go` in `cmd/auth/`. (e1943d7)
     - [x] Dependency injection for repositories and usecases.
     - [x] Lambda start logic.
 - [x] Task: Update `deploy.sh` and `Makefile` for LocalStack deployment. (c73a8b4)
     - [x] Configure `deploy.sh` to target LocalStack endpoints.
     - [x] Configure `Makefile` for LocalStack-only deployment commands.
-- [~] Task: Conductor - User Manual Verification 'Phase 4: Entry Point and Deployment' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Phase 4: Entry Point and Deployment' (Protocol in workflow.md)
