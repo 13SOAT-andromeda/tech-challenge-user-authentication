@@ -26,9 +26,9 @@
 ## Phase 3: Adapters and Infrastructure
 - [x] Task: Create RDS Repository integration file in `internal/adapters/repositories/rds_user_repository.go`. (48447ee)
     - [x] Logic not implemented, only file structure and model mapping.
-- [ ] Task: Create DynamoDB Repository integration file in `internal/adapters/repositories/dynamo_token_repository.go`.
-    - [ ] Table: `user-authentication-token`, Fields: `token_id`, `user_id`.
-    - [ ] Logic not implemented, only file structure and model mapping.
+- [x] Task: Create DynamoDB Repository integration file in `internal/adapters/repositories/dynamo_token_repository.go`. (9111890)
+    - [x] Table: `user-authentication-token`, Fields: `token_id`, `user_id`.
+    - [x] Logic not implemented, only file structure and model mapping.
 - [ ] Task: Implement Lambda Handler in `internal/adapters/handlers/auth_handler.go`.
     - [ ] Use standard AWS Lambda handler (no Gin adapter).
 - [ ] Task: Conductor - User Manual Verification 'Phase 3: Adapters and Infrastructure' (Protocol in workflow.md)
