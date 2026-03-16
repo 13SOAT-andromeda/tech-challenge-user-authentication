@@ -7,7 +7,7 @@
     - [x] Create `internal/core/domain/`, `internal/core/usecases/`, `internal/core/ports/`
     - [x] Create `internal/adapters/handlers/`, `internal/adapters/repositories/`
     - [x] Create `internal/infrastructure/`
-- [ ] Task: Initialize `go.mod` and install dependencies (`aws-sdk-go-v2`, `golang-jwt`).
+- [x] Task: Initialize `go.mod` and install dependencies (`aws-sdk-go-v2`, `golang-jwt`). (4aabc9d)
 - [ ] Task: Conductor - User Manual Verification 'Phase 1: Cleanup and Structure Refactoring' (Protocol in workflow.md)
 
 ## Phase 2: Domain and Core Logic
