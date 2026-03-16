@@ -14,9 +14,9 @@
 - [x] Task: Define User and Token domain entities in `internal/core/domain/`. (82e683c)
     - [x] Follow RDS User model from reference repository.
     - [x] Define Token entity with `token_id` and `user_id`.
-- [ ] Task: Define Repository interfaces in `internal/core/ports/`.
-    - [ ] `UserRepository` for RDS.
-    - [ ] `TokenRepository` for DynamoDB.
+- [x] Task: Define Repository interfaces in `internal/core/ports/`. (7688671)
+    - [x] `UserRepository` for RDS.
+    - [x] `TokenRepository` for DynamoDB.
 - [ ] Task: Implement Auth UseCase in `internal/core/usecases/`.
     - [ ] Logic for CPF regex validation.
     - [ ] Logic for user status check.
