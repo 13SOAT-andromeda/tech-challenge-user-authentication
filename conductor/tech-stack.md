@@ -4,8 +4,7 @@
 - **Go (v1.23.0)**: The core programming language for the API, chosen for its performance and native support in AWS Lambda.
 
 ## Frameworks
-- **Gin (v1.11.0)**: Used as the HTTP web framework for routing and handling API requests.
-- **AWS Lambda API Proxy (v0.16.2)**: Specifically the `ginadapter`, to proxy standard Gin requests into the AWS Lambda handler.
+- **Standard AWS Lambda Library**: Used for handling events directly without additional web framework overhead, ensuring minimal cold starts and simplicity.
 
 ## Infrastructure
 - **LocalStack**: Provides a local emulation of AWS services for consistent development and testing.
