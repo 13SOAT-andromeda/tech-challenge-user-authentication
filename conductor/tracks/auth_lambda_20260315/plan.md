@@ -10,7 +10,7 @@
 - [x] Task: Initialize `go.mod` and install dependencies (`aws-sdk-go-v2`, `golang-jwt`). (4aabc9d)
 - [x] Task: Conductor - User Manual Verification 'Phase 1: Cleanup and Structure Refactoring' (Protocol in workflow.md)
 
-## Phase 2: Domain and Core Logic
+## Phase 2: Domain and Core Logic [checkpoint: e7f2492]
 - [x] Task: Define User and Token domain entities in `internal/core/domain/`. (82e683c)
     - [x] Follow RDS User model from reference repository.
     - [x] Define Token entity with `token_id` and `user_id`.
@@ -21,7 +21,7 @@
     - [x] Logic for CPF regex validation.
     - [x] Logic for user status check.
     - [x] Logic for JWT generation (24h expiration, include jti).
-- [ ] Task: Conductor - User Manual Verification 'Phase 2: Domain and Core Logic' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Phase 2: Domain and Core Logic' (Protocol in workflow.md)
 
 ## Phase 3: Adapters and Infrastructure
 - [ ] Task: Create RDS Repository integration file in `internal/adapters/repositories/rds_user_repository.go`.
