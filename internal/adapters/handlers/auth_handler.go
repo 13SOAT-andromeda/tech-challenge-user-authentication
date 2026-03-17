@@ -21,9 +21,9 @@ func NewAuthHandler(uc *usecases.AuthUseCase) *AuthHandler {
 }
 
 func (h *AuthHandler) Handle(ctx context.Context, req events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
-	Document := req.Headers["x-Document"]
+	Document := req.Headers["x-user-cpf"]
 	if Document == "" {
-		return h.errorResponse(http.StatusBadRequest, "x-Document header is required"), nil
+		return h.errorResponse(http.StatusBadRequest, "x-user-cpf header is required"), nil
 	}
 
 	token, err := h.authUseCase.Authenticate(ctx, Document)

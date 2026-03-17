@@ -34,7 +34,7 @@ func TestAuthHandler_Handle(t *testing.T) {
 	uc := usecases.NewAuthUseCase(userRepo, tokenRepo, "secret")
 	h := NewAuthHandler(uc)
 
-	t.Run("should return 400 if x-Document header is missing", func(t *testing.T) {
+	t.Run("should return 400 if x-user-cpf header is missing", func(t *testing.T) {
 		req := events.APIGatewayProxyRequest{}
 		resp, err := h.Handle(ctx, req)
 		if err != nil {
@@ -48,7 +48,7 @@ func TestAuthHandler_Handle(t *testing.T) {
 	t.Run("should return 200 and token if Document is valid and user is active", func(t *testing.T) {
 		req := events.APIGatewayProxyRequest{
 			Headers: map[string]string{
-				"x-Document": "123.456.789-00",
+				"x-user-cpf": "123.456.789-00",
 			},
 		}
 		resp, err := h.Handle(ctx, req)
