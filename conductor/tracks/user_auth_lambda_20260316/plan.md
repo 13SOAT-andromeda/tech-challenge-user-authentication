@@ -13,9 +13,9 @@
 - [x] Task: Implement PostgreSQL Repository (GORM) 75703fc
     - [x] Write failing tests for `GetByDocument` in `internal/adapters/repositories/user_repository_test.go`
     - [x] Implement `GetByDocument` in `internal/adapters/repositories/user_repository.go` using `gorm.io/gorm` and `gorm.io/driver/postgres`
-- [ ] Task: Implement DynamoDB Repository
-    - [ ] Write failing tests for `SaveToken` in `internal/adapters/repositories/token_repository_test.go`
-    - [ ] Implement `SaveToken` in `internal/adapters/repositories/token_repository.go` using AWS SDK v2
+- [x] Task: Implement DynamoDB Repository befe60c
+    - [x] Write failing tests for `SaveToken` in `internal/adapters/repositories/token_repository_test.go`
+    - [x] Implement `SaveToken` in `internal/adapters/repositories/token_repository.go` using AWS SDK v2
 - [ ] Task: Conductor - User Manual Verification 'Phase 2: Repository Layer (TDD)' (Protocol in workflow.md)
 
 ## Phase 3: Usecase Layer (TDD)
