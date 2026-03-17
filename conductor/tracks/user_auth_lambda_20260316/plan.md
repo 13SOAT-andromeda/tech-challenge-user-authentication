@@ -4,9 +4,9 @@
 - [x] Task: Define Domain Models (User, Token) ffffef9
     - [x] Create `internal/core/domain/user.go`
     - [x] Create `internal/core/domain/token.go`
-- [ ] Task: Create LocalStack Initialization Scripts
-    - [ ] Create `scripts/init-rds.sql` to setup `garagedb` and users table
-    - [ ] Create `scripts/init-dynamodb.sh` to setup `user-auth-tokens` table
+- [x] Task: Create LocalStack Initialization Scripts a25048f
+    - [x] Create `scripts/init-rds.sql` to setup `garagedb` and users table
+    - [x] Create `scripts/init-dynamodb.sh` to setup `user-auth-tokens` table
 - [ ] Task: Conductor - User Manual Verification 'Phase 1: Setup and Infrastructure' (Protocol in workflow.md)
 
 ## Phase 2: Repository Layer (TDD)
