@@ -1,9 +1,9 @@
 # Implementation Plan: User Auth Lambda (Go/GORM/DynamoDB)
 
 ## Phase 1: Setup and Infrastructure
-- [ ] Task: Define Domain Models (User, Token)
-    - [ ] Create `internal/core/domain/user.go`
-    - [ ] Create `internal/core/domain/token.go`
+- [x] Task: Define Domain Models (User, Token) ffffef9
+    - [x] Create `internal/core/domain/user.go`
+    - [x] Create `internal/core/domain/token.go`
 - [ ] Task: Create LocalStack Initialization Scripts
     - [ ] Create `scripts/init-rds.sql` to setup `garagedb` and users table
     - [ ] Create `scripts/init-dynamodb.sh` to setup `user-auth-tokens` table
