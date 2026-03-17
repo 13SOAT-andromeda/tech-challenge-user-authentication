@@ -9,14 +9,14 @@
     - [x] Create `scripts/init-dynamodb.sh` to setup `user-auth-tokens` table
 - [x] Task: Conductor - User Manual Verification 'Phase 1: Setup and Infrastructure' (Protocol in workflow.md) 4e997c3
 
-## Phase 2: Repository Layer (TDD)
+## Phase 2: Repository Layer (TDD) [checkpoint: 2d15c33]
 - [x] Task: Implement PostgreSQL Repository (GORM) 75703fc
     - [x] Write failing tests for `GetByDocument` in `internal/adapters/repositories/user_repository_test.go`
     - [x] Implement `GetByDocument` in `internal/adapters/repositories/user_repository.go` using `gorm.io/gorm` and `gorm.io/driver/postgres`
 - [x] Task: Implement DynamoDB Repository befe60c
     - [x] Write failing tests for `SaveToken` in `internal/adapters/repositories/token_repository_test.go`
     - [x] Implement `SaveToken` in `internal/adapters/repositories/token_repository.go` using AWS SDK v2
-- [ ] Task: Conductor - User Manual Verification 'Phase 2: Repository Layer (TDD)' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Phase 2: Repository Layer (TDD)' (Protocol in workflow.md) 2d15c33
 
 ## Phase 3: Usecase Layer (TDD)
 - [ ] Task: Implement Authentication Usecase
