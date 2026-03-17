@@ -30,9 +30,9 @@
     - [x] Implement the handler in `internal/adapters/handlers/auth_handler.go`
 - [x] Task: Conductor - User Manual Verification 'Phase 4: Handler Layer (TDD)' (Protocol in workflow.md) 67c8406
 
-## Phase 5: Integration and Verification
+## Phase 5: Integration and Verification [checkpoint: 42d3433]
 - [x] Task: Manual Verification d6edbf1
     - [x] Test success flow (200 OK with token)
     - [x] Test invalid CPF format (400 Bad Request)
     - [x] Test user not found/inactive (404 Not Found)
-- [ ] Task: Conductor - User Manual Verification 'Phase 5: Integration and Verification' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Phase 5: Integration and Verification' (Protocol in workflow.md) 42d3433
