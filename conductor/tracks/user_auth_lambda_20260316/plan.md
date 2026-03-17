@@ -19,9 +19,9 @@
 - [x] Task: Conductor - User Manual Verification 'Phase 2: Repository Layer (TDD)' (Protocol in workflow.md) 2d15c33
 
 ## Phase 3: Usecase Layer (TDD)
-- [ ] Task: Implement Authentication Usecase
-    - [ ] Write failing tests for `Authenticate` in `internal/core/usecases/auth_usecase_test.go`
-    - [ ] Implement `Authenticate` in `internal/core/usecases/auth_usecase.go` (Regex validation, GORM lookup, JWT generation, DynamoDB persistence)
+- [x] Task: Implement Authentication Usecase ef146af
+    - [x] Write failing tests for `Authenticate` in `internal/core/usecases/auth_usecase_test.go`
+    - [x] Implement `Authenticate` in `internal/core/usecases/auth_usecase.go` (Regex validation, GORM lookup, JWT generation, DynamoDB persistence)
 - [ ] Task: Conductor - User Manual Verification 'Phase 3: Usecase Layer (TDD)' (Protocol in workflow.md)
 
 ## Phase 4: Handler Layer (TDD)
