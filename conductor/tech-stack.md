@@ -5,6 +5,11 @@
 
 ## Frameworks
 - **Standard AWS Lambda Library**: Used for handling events directly without additional web framework overhead, ensuring minimal cold starts and simplicity.
+- **GORM**: Object-Relational Mapping library for Go, used for interacting with the PostgreSQL database.
+
+## Persistence
+- **PostgreSQL (RDS)**: Used for user data storage and validation.
+- **DynamoDB**: Used for persisting authentication token records.
 
 ## Infrastructure
 - **LocalStack**: Provides a local emulation of AWS services for consistent development and testing.
