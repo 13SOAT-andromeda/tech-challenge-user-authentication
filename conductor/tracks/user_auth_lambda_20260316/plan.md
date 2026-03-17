@@ -31,8 +31,8 @@
 - [x] Task: Conductor - User Manual Verification 'Phase 4: Handler Layer (TDD)' (Protocol in workflow.md) 67c8406
 
 ## Phase 5: Integration and Verification
-- [ ] Task: Manual Verification
-    - [ ] Test success flow (200 OK with token)
-    - [ ] Test invalid CPF format (400 Bad Request)
-    - [ ] Test user not found/inactive (404 Not Found)
+- [x] Task: Manual Verification d6edbf1
+    - [x] Test success flow (200 OK with token)
+    - [x] Test invalid CPF format (400 Bad Request)
+    - [x] Test user not found/inactive (404 Not Found)
 - [ ] Task: Conductor - User Manual Verification 'Phase 5: Integration and Verification' (Protocol in workflow.md)
