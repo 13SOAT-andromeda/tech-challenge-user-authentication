@@ -3,7 +3,7 @@ package repositories
 import (
 	"context"
 	"fmt"
-	"tech-challenge-user-validation/internal/infrastructure/persistence/dynamo"
+	"tech-challenge-user-validation/internal/adapters/database/model"
 
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
@@ -26,7 +26,7 @@ func NewTokenRepository(client Client, tableName string) *TokenRepository {
 }
 
 func (d *TokenRepository) Save(ctx context.Context, pk string, token string, expiresAt int64) error {
-	tokenModel := dynamo.TokenModel{
+	tokenModel := model.TokenModel{
 		PK:        pk,
 		Token:     token,
 		ExpiresAt: expiresAt,

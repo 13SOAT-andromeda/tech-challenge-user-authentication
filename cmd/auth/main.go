@@ -7,7 +7,7 @@ import (
 	"os"
 
 	"tech-challenge-user-validation/internal/adapters/handlers"
-	"tech-challenge-user-validation/internal/adapters/repositories"
+	"tech-challenge-user-validation/internal/adapters/database/repositories"
 	"tech-challenge-user-validation/internal/core/usecases"
 
 	"github.com/aws/aws-lambda-go/lambda"

@@ -1,4 +1,4 @@
-package dynamo
+package model
 
 type TokenModel struct {
 	PK        string `dynamodbav:"pk"`

@@ -1,4 +1,4 @@
-package postgres
+package model
 
 import (
 	"tech-challenge-user-validation/internal/core/domain"
