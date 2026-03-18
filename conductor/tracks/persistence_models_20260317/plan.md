@@ -19,7 +19,7 @@
 - [x] Task: Conductor - User Manual Verification 'Phase 2: DynamoDB Token Model' (Protocol in workflow.md) 36a44e6
 
 ## Phase 3: Final Review and Standardization
-- [ ] Task: Audit for Clean Architecture Compliance
+- [~] Task: Audit for Clean Architecture Compliance
     - [ ] Verify no database tags exist in `internal/core/domain/`
     - [ ] Verify repository interfaces in `internal/core/ports/` remain technology-agnostic
     - [ ] Ensure all factories and methods follow the standardized nomenclature
