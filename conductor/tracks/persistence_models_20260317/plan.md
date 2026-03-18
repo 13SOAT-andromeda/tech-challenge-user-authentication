@@ -1,13 +1,13 @@
 # Implementation Plan: Implement Persistence Models for RDS and DynamoDB
 
 ## Phase 1: Setup and PostgreSQL User Model
-- [~] Task: Create PostgreSQL persistence model `internal/infrastructure/persistence/postgres/user_model.go`
-    - [ ] Define `UserModel` struct with fields `ID`, `Document`, `IsActive`, and `CreatedAt`
-    - [ ] Add `db:"..."` tags using `snake_case` mapping
-    - [ ] Implement `ToDomain()` method to convert `UserModel` to `domain.User`
-- [ ] Task: Standardize PostgreSQL Repository Factory
-    - [ ] Ensure any repository factory for User is named `NewUserRepository` (not `NewGORMUserRepository`)
-- [ ] Task: Conductor - User Manual Verification 'Phase 1: Setup and PostgreSQL User Model' (Protocol in workflow.md)
+- [x] Task: Create PostgreSQL persistence model `internal/infrastructure/persistence/postgres/user_model.go` 1ce4d7a
+    - [x] Define `UserModel` struct with fields `ID`, `Document`, `IsActive`, and `CreatedAt`
+    - [x] Add `db:"..."` tags using `snake_case` mapping
+    - [x] Implement `ToDomain()` method to convert `UserModel` to `domain.User`
+- [x] Task: Standardize PostgreSQL Repository Factory 1ce4d7a
+    - [x] Ensure any repository factory for User is named `NewUserRepository` (not `NewGORMUserRepository`)
+- [x] Task: Conductor - User Manual Verification 'Phase 1: Setup and PostgreSQL User Model' (Protocol in workflow.md) 1ce4d7a
 
 ## Phase 2: DynamoDB Token Model
 - [ ] Task: Create DynamoDB persistence model `internal/infrastructure/persistence/dynamo/token_model.go`
