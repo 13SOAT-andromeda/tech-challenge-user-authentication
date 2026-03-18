@@ -16,11 +16,11 @@ func (m *mockUserRepository) GetByDocument(ctx context.Context, Document string)
 }
 
 type mockTokenRepository struct {
-	saveFunc func(ctx context.Context, token *domain.Token) error
+	saveFunc func(ctx context.Context, pk string, token string, expiresAt int64) error
 }
 
-func (m *mockTokenRepository) Save(ctx context.Context, token *domain.Token) error {
-	return m.saveFunc(ctx, token)
+func (m *mockTokenRepository) Save(ctx context.Context, pk string, token string, expiresAt int64) error {
+	return m.saveFunc(ctx, pk, token, expiresAt)
 }
 
 func TestAuthUseCase_Authenticate(t *testing.T) {
@@ -61,22 +61,23 @@ func TestAuthUseCase_Authenticate(t *testing.T) {
 	})
 
 	t.Run("should succeed and save token if user is active", func(t *testing.T) {
+		document := "123.456.789-00"
 		mockUserRepo := &mockUserRepository{
 			getUserFunc: func(ctx context.Context, Document string) (*domain.User, error) {
-				return &domain.User{ID: 1, Document: Document, IsActive: true}, nil
+				return &domain.User{ID: 1, Document: document, IsActive: true}, nil
 			},
 		}
 		tokenSaved := false
 		mockTokenRepo := &mockTokenRepository{
-			saveFunc: func(ctx context.Context, token *domain.Token) error {
-				if token.UserID == 1 && token.TokenID != "" {
+			saveFunc: func(ctx context.Context, pk string, token string, expiresAt int64) error {
+				if pk == document && token != "" && expiresAt > 0 {
 					tokenSaved = true
 				}
 				return nil
 			},
 		}
 		uc := NewAuthUseCase(mockUserRepo, mockTokenRepo, "secret")
-		token, err := uc.Authenticate(ctx, "123.456.789-00")
+		token, err := uc.Authenticate(ctx, document)
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}

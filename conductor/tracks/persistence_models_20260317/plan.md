@@ -10,7 +10,7 @@
 - [x] Task: Conductor - User Manual Verification 'Phase 1: Setup and PostgreSQL User Model' (Protocol in workflow.md) 1ce4d7a
 
 ## Phase 2: DynamoDB Token Model
-- [ ] Task: Create DynamoDB persistence model `internal/infrastructure/persistence/dynamo/token_model.go`
+- [~] Task: Create DynamoDB persistence model `internal/infrastructure/persistence/dynamo/token_model.go`
     - [ ] Define `TokenModel` struct with fields `PK` (CPF), `Token`, and `ExpiresAt` (int64)
     - [ ] Add `dynamodbav:"..."` tags using `snake_case` mapping
 - [ ] Task: Standardize DynamoDB Repository Factory

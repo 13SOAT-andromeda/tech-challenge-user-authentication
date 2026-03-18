@@ -6,7 +6,6 @@ import (
 	"regexp"
 	"time"
 
-	"tech-challenge-user-validation/internal/core/domain"
 	"tech-challenge-user-validation/internal/core/ports"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -62,12 +61,9 @@ func (uc *AuthUseCase) Authenticate(ctx context.Context, Document string) (strin
 	}
 
 	// Save token in DynamoDB (integration logic)
-	tokenEntity := &domain.Token{
-		TokenID: jti,
-		UserID:  user.ID,
-	}
-
-	err = uc.tokenRepo.Save(ctx, tokenEntity)
+	// PK (CPF do usuário). Token (String JWT). ExpiresAt (int64 para TTL).
+	expiresAt := time.Now().Add(24 * time.Hour).Unix()
+	err = uc.tokenRepo.Save(ctx, user.Document, tokenString, expiresAt)
 	if err != nil {
 		return "", err
 	}

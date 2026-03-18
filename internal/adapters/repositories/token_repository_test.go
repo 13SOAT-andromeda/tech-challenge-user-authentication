@@ -4,8 +4,6 @@ import (
 	"context"
 	"testing"
 
-	"tech-challenge-user-validation/internal/core/domain"
-
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 )
 
@@ -17,12 +15,11 @@ func (m *mockDynamoDBAPI) PutItem(ctx context.Context, params *dynamodb.PutItemI
 	return m.putItemFunc(ctx, params, optFns...)
 }
 
-func TestDynamoTokenRepository_Save(t *testing.T) {
+func TestTokenRepository_Save(t *testing.T) {
 	ctx := context.Background()
-	token := &domain.Token{
-		TokenID: "jti-123",
-		UserID:  456,
-	}
+	pk := "12345678900"
+	token := "some-jwt-token"
+	expiresAt := int64(1679062200)
 
 	t.Run("should succeed when put item succeeds", func(t *testing.T) {
 		mockSvc := &mockDynamoDBAPI{
@@ -34,8 +31,8 @@ func TestDynamoTokenRepository_Save(t *testing.T) {
 			},
 		}
 
-		repo := NewDynamoTokenRepository(mockSvc, "user-auth-tokens")
-		err := repo.Save(ctx, token)
+		repo := NewTokenRepository(mockSvc, "user-auth-tokens")
+		err := repo.Save(ctx, pk, token, expiresAt)
 
 		if err != nil {
 			t.Errorf("unexpected error: %v", err)

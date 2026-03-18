@@ -23,7 +23,7 @@ func (m *mockUserRepository) GetByDocument(ctx context.Context, Document string)
 
 type mockTokenRepository struct{}
 
-func (m *mockTokenRepository) Save(ctx context.Context, token *domain.Token) error {
+func (m *mockTokenRepository) Save(ctx context.Context, pk string, token string, expiresAt int64) error {
 	return nil
 }
 
