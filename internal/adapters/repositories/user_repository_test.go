@@ -11,7 +11,7 @@ import (
 	"gorm.io/gorm"
 )
 
-func TestGORMUserRepository_GetByDocument(t *testing.T) {
+func TestUserRepository_GetByDocument(t *testing.T) {
 	dbMock, mock, err := sqlmock.New()
 	if err != nil {
 		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
@@ -25,7 +25,7 @@ func TestGORMUserRepository_GetByDocument(t *testing.T) {
 		t.Fatalf("an error '%s' was not expected when opening gorm db", err)
 	}
 
-	repo := NewGORMUserRepository(gormDB)
+	repo := NewUserRepository(gormDB)
 	ctx := context.Background()
 	document := "123.456.789-00"
 

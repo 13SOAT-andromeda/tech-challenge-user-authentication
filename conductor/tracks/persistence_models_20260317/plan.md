@@ -1,7 +1,7 @@
 # Implementation Plan: Implement Persistence Models for RDS and DynamoDB
 
 ## Phase 1: Setup and PostgreSQL User Model
-- [ ] Task: Create PostgreSQL persistence model `internal/infrastructure/persistence/postgres/user_model.go`
+- [~] Task: Create PostgreSQL persistence model `internal/infrastructure/persistence/postgres/user_model.go`
     - [ ] Define `UserModel` struct with fields `ID`, `Document`, `IsActive`, and `CreatedAt`
     - [ ] Add `db:"..."` tags using `snake_case` mapping
     - [ ] Implement `ToDomain()` method to convert `UserModel` to `domain.User`

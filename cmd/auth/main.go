@@ -51,8 +51,8 @@ func main() {
 	}
 
 	// 4. Dependency Injection
-	userRepo := repositories.NewGORMUserRepository(db)
-	tokenRepo := repositories.NewDynamoTokenRepository(dynamoClient, tableName)
+	userRepo := repositories.NewUserRepository(db)
+	tokenRepo := repositories.NewTokenRepository(dynamoClient, tableName)
 
 	authUseCase := usecases.NewAuthUseCase(userRepo, tokenRepo, jwtSecret)
 	authHandler := handlers.NewAuthHandler(authUseCase)
