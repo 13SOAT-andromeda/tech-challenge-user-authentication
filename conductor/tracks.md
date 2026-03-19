@@ -4,5 +4,5 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 ---
 
-- [ ] **Track: Refactor the Lambda tech-challenge-user-validation to sync the User model and repository structure with reference files, standardizing names and creating unit tests.**
+- [x] **Track: Refactor the Lambda tech-challenge-user-validation to sync the User model and repository structure with reference files, standardizing names and creating unit tests.**
 *Link: [./tracks/user_refactor_20260318/](./tracks/user_refactor_20260318/)*
