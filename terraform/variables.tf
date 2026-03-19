@@ -20,3 +20,8 @@ variable "project_env" {
   type        = string
   default     = "dev"
 }
+
+variable "image_tag" {
+  description = "ECR image tag"
+  type        = string
+}
