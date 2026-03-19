@@ -6,8 +6,10 @@ import (
 	"log"
 	"os"
 
-	"tech-challenge-user-validation/internal/adapters/handlers"
+	"tech-challenge-user-validation/internal/adapters/database/model/address"
+	"tech-challenge-user-validation/internal/adapters/database/model/user"
 	"tech-challenge-user-validation/internal/adapters/database/repositories"
+	"tech-challenge-user-validation/internal/adapters/handlers"
 	"tech-challenge-user-validation/internal/core/usecases"
 
 	"github.com/aws/aws-lambda-go/lambda"
@@ -37,6 +39,11 @@ func main() {
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
 		log.Fatalf("failed to connect to postgres: %v", err)
+	}
+
+	err = db.AutoMigrate(&user.Model{}, &address.Model{})
+	if err != nil {
+		log.Printf("failed to auto migrate models: %v", err)
 	}
 
 	// 3. DynamoDB Connection

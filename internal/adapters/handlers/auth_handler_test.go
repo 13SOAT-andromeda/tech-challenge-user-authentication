@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"tech-challenge-user-validation/internal/core/domain"
+	"tech-challenge-user-validation/internal/core/ports"
 	"tech-challenge-user-validation/internal/core/usecases"
 
 	"github.com/aws/aws-lambda-go/events"
@@ -21,17 +22,36 @@ func (m *mockUserRepository) GetByDocument(ctx context.Context, Document string)
 	return nil, nil
 }
 
+func (m *mockUserRepository) GetByEmail(ctx context.Context, email string) (*domain.User, error) {
+	return nil, nil
+}
+
+func (m *mockUserRepository) Search(ctx context.Context, params ports.UserSearch) []domain.User {
+	return nil
+}
+
 type mockTokenRepository struct{}
 
 func (m *mockTokenRepository) Save(ctx context.Context, pk string, token string, expiresAt int64) error {
 	return nil
 }
 
+type mockSessionService struct{}
+
+func (m *mockSessionService) Create(ctx context.Context, sessionID string, userID string, expiresAt int64) (*ports.Session, error) {
+	return &ports.Session{ID: sessionID}, nil
+}
+
+func (m *mockSessionService) GetByID(ctx context.Context, sessionID string) (*ports.Session, error) {
+	return nil, nil
+}
+
 func TestAuthHandler_Handle(t *testing.T) {
 	ctx := context.Background()
 	userRepo := &mockUserRepository{}
 	tokenRepo := &mockTokenRepository{}
-	uc := usecases.NewAuthUseCase(userRepo, tokenRepo, "secret")
+	sessionSvc := &mockSessionService{}
+	uc := usecases.NewAuthUseCase(userRepo, tokenRepo, sessionSvc, "secret")
 	h := NewAuthHandler(uc)
 
 	t.Run("should return 400 if x-user-cpf header is missing", func(t *testing.T) {
