@@ -13,7 +13,7 @@ To establish a robust and scalable microservice blueprint using Go, optimized fo
 ## Primary Goals
 - **RESTful API Expansion**: Evolve the initial /hello endpoint into a comprehensive suite of API services.
 - **AWS Service Integration**: Seamlessly connect the Go application with native AWS services such as DynamoDB, S3, or RDS.
-- **Secure Authentication**: Provide a robust user authentication flow using CPF validation, RDS status checks, and JWT token generation.
+- **Secure Authentication**: Provide a robust user authentication flow using CPF validation, RDS status checks, and session-based JWT token generation with real-time JTI validation in DynamoDB.
 
 ## Success Criteria
 - **High Test Coverage**: Maintain a minimum of 80% code coverage to ensure reliability and simplify maintenance.
