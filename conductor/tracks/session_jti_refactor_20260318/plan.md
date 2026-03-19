@@ -5,13 +5,13 @@ Refactor session management to use UUID-based JTI and persist session metadata i
 ## Phase 1: Preparation and Generic Refactoring
 Goal: Align naming conventions with generic ports and ensure the environment is ready.
 
-- [ ] Task: Refactor `UserRepository` and `TokenRepository` to remove implementation-specific prefixes (e.g., `GORM`, `Dynamo`).
-    - [ ] Rename files and structs in `internal/adapters/database/repositories/`.
-    - [ ] Update constructor names (e.g., `NewUserRepository`).
-    - [ ] Update all references in `cmd/auth/main.go`.
-- [ ] Task: Ensure `ports.SessionService` is correctly defined and accessible.
-    - [ ] Verify `internal/core/ports/session_service.go`.
-- [ ] Task: Conductor - User Manual Verification 'Phase 1: Preparation and Generic Refactoring' (Protocol in workflow.md)
+- [x] Task: Refactor `UserRepository` and `TokenRepository` to remove implementation-specific prefixes (e.g., `GORM`, `Dynamo`). 26c005b
+    - [x] Rename files and structs in `internal/adapters/database/repositories/`. 26c005b
+    - [x] Update constructor names (e.g., `NewUserRepository`). 26c005b
+    - [x] Update all references in `cmd/auth/main.go`. 26c005b
+- [x] Task: Ensure `ports.SessionService` is correctly defined and accessible. 26c005b
+    - [x] Verify `internal/core/ports/session_service.go`. 26c005b
+- [x] Task: Conductor - User Manual Verification 'Phase 1: Preparation and Generic Refactoring' (Protocol in workflow.md) 26c005b
 
 ## Phase 2: Login Flow (Minimalist Persistence)
 Goal: Update the Login process to generate a UUID JTI and save minimalist session metadata.
