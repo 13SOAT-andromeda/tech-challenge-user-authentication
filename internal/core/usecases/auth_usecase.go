@@ -9,22 +9,22 @@ import (
 	"tech-challenge-user-validation/internal/core/ports"
 
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
 )
 
-// Dummy import to satisfy golang-jwt/jwt/v5 if needed, but actually I need to check the exact usage.
-// I'll use standard jwt-go style.
-
 type AuthUseCase struct {
-	userRepo  ports.UserRepository
-	tokenRepo ports.TokenRepository
-	jwtSecret []byte
+	userRepo    ports.UserRepository
+	tokenRepo   ports.TokenRepository
+	sessionService ports.SessionService
+	jwtSecret   []byte
 }
 
-func NewAuthUseCase(userRepo ports.UserRepository, tokenRepo ports.TokenRepository, secret string) *AuthUseCase {
+func NewAuthUseCase(userRepo ports.UserRepository, tokenRepo ports.TokenRepository, sessionService ports.SessionService, secret string) *AuthUseCase {
 	return &AuthUseCase{
-		userRepo:  userRepo,
-		tokenRepo: tokenRepo,
-		jwtSecret: []byte(secret),
+		userRepo:       userRepo,
+		tokenRepo:      tokenRepo,
+		sessionService: sessionService,
+		jwtSecret:      []byte(secret),
 	}
 }
 
@@ -40,19 +40,26 @@ func (uc *AuthUseCase) Authenticate(ctx context.Context, Document string) (strin
 		return "", err
 	}
 
+	if user == nil {
+		return "", errors.New("user not found")
+	}
+
 	if !user.IsActive {
 		return "", errors.New("user is inactive")
 	}
 
-	// Generate JTI
-	jti := time.Now().Format("20060102150405") // Simple JTI for this example
+	// Generate JTI (UUID v4)
+	jti := uuid.New().String()
+
+	// Expiry: 24 hours
+	expiresAt := time.Now().Add(24 * time.Hour).Unix()
 
 	// Generate JWT
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"sub": user.ID,
+		"sub":      user.ID,
 		"Document": user.Document,
-		"jti": jti,
-		"exp": time.Now().Add(24 * time.Hour).Unix(),
+		"jti":      jti,
+		"exp":      expiresAt,
 	})
 
 	tokenString, err := token.SignedString(uc.jwtSecret)
@@ -60,13 +67,49 @@ func (uc *AuthUseCase) Authenticate(ctx context.Context, Document string) (strin
 		return "", err
 	}
 
-	// Save token in DynamoDB (integration logic)
-	// PK (CPF do usuário). Token (String JWT). ExpiresAt (int64 para TTL).
-	expiresAt := time.Now().Add(24 * time.Hour).Unix()
+	// 1. Save minimalist session in SessionService (DynamoDB)
+	_, err = uc.sessionService.Create(ctx, jti, user.Document, expiresAt)
+	if err != nil {
+		return "", err
+	}
+
+	// 2. Backward compatibility: Save token in TokenRepository (if still needed)
 	err = uc.tokenRepo.Save(ctx, user.Document, tokenString, expiresAt)
 	if err != nil {
 		return "", err
 	}
 
 	return tokenString, nil
+}
+
+func (uc *AuthUseCase) Validate(ctx context.Context, tokenString string) (bool, error) {
+	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+		return uc.jwtSecret, nil
+	})
+
+	if err != nil || !token.Valid {
+		return false, errors.New("invalid token")
+	}
+
+	claims, ok := token.Claims.(jwt.MapClaims)
+	if !ok {
+		return false, errors.New("invalid claims")
+	}
+
+	jti, ok := claims["jti"].(string)
+	if !ok {
+		return false, errors.New("jti not found in token")
+	}
+
+	// Verify session exists in DynamoDB
+	session, err := uc.sessionService.GetByID(ctx, jti)
+	if err != nil {
+		return false, err
+	}
+
+	if session == nil {
+		return false, errors.New("session not found or revoked")
+	}
+
+	return true, nil
 }

@@ -53,8 +53,9 @@ func main() {
 	// 4. Dependency Injection
 	userRepo := repositories.NewUserRepository(db)
 	tokenRepo := repositories.NewTokenRepository(dynamoClient, tableName)
+	sessionSvc := repositories.NewSessionRepository(dynamoClient, tableName)
 
-	authUseCase := usecases.NewAuthUseCase(userRepo, tokenRepo, jwtSecret)
+	authUseCase := usecases.NewAuthUseCase(userRepo, tokenRepo, sessionSvc, jwtSecret)
 	authHandler := handlers.NewAuthHandler(authUseCase)
 
 	// 5. Start Lambda
