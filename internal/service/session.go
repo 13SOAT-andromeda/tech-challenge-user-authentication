@@ -3,12 +3,9 @@ package services
 import (
 	"context"
 	"errors"
-	"strconv"
 	"time"
 
 	"tech-challenge-user-validation/internal/core/ports"
-
-	"github.com/google/uuid"
 )
 
 type sessionService struct{}
@@ -17,18 +14,19 @@ func NewSessionService() *sessionService {
 	return &sessionService{}
 }
 
-func (s *sessionService) Create(ctx context.Context, userID uint, refreshToken string, expiresAt time.Time) (*ports.Session, error) {
-	if userID == 0 {
+func (s *sessionService) Create(ctx context.Context, sessionID string, userID string, expiresAt int64) (*ports.Session, error) {
+	if sessionID == "" {
+		return nil, errors.New("invalid session ID")
+	}
+	if userID == "" {
 		return nil, errors.New("invalid user ID")
 	}
-
-	if expiresAt.Before(time.Now()) {
+	if expiresAt <= time.Now().Unix() {
 		return nil, errors.New("expiration date cannot be in the past")
 	}
-
 	return &ports.Session{
-		ID:        uuid.NewString(),
-		UserID:    strconv.Itoa(int(userID)),
+		ID:        sessionID,
+		UserID:    userID,
 		ExpiresAt: expiresAt,
 	}, nil
 }

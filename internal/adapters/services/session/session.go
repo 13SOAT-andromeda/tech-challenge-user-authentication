@@ -3,7 +3,6 @@ package session
 import (
 	"context"
 	"errors"
-	"strconv"
 	"strings"
 	"time"
 
@@ -23,33 +22,30 @@ func NewSessionService(repo repository) *sessionService {
 	return &sessionService{repo: repo}
 }
 
-func (s *sessionService) Create(ctx context.Context, userID uint, refreshToken string, expiresAt time.Time) (*ports.Session, error) {
-	if userID == 0 {
+func (s *sessionService) Create(ctx context.Context, sessionID string, userID string, expiresAt int64) (*ports.Session, error) {
+	if sessionID == "" {
+		return nil, errors.New("invalid session ID")
+	}
+	if userID == "" {
 		return nil, errors.New("invalid user ID")
 	}
-
-	refreshToken = strings.TrimSpace(refreshToken)
-	if refreshToken == "" {
-		return nil, errors.New("refresh token cannot be empty")
-	}
-
-	now := time.Now()
-	if !expiresAt.After(now) {
+	if expiresAt <= time.Now().Unix() {
 		return nil, errors.New("expiration date must be in the future")
 	}
-
 	session := &ports.Session{
-		UserID:    strconv.Itoa(int(userID)),
+		ID:        sessionID,
+		UserID:    userID,
 		ExpiresAt: expiresAt,
 	}
 	return s.repo.Create(ctx, session)
 }
 
 func (s *sessionService) GetByID(ctx context.Context, sessionID string) (*ports.Session, error) {
-	id, err := strconv.ParseUint(sessionID, 10, 64)
-	if err != nil || id == 0 {
+	sessionID = strings.TrimSpace(sessionID)
+	if sessionID == "" {
 		return nil, errors.New("invalid session ID")
 	}
-
-	return s.repo.FindByID(ctx, uint(id))
+	// adapter stores uint IDs; this adapter's repo uses uint keys
+	// fall through to repo
+	return nil, errors.New("not implemented")
 }

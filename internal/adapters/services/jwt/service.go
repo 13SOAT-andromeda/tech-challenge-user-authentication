@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"time"
 
+	"tech-challenge-user-validation/internal/core/ports"
+
 	jwtv5 "github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 )
@@ -34,7 +36,7 @@ func NewService(secret string, accessTokenExpiry, refreshTokenExpiry time.Durati
 func (s *Service) GenerateAccessToken(userID uint, email, role string, sessionID string) (string, error) {
 	claims := &Claims{
 		UserID:    userID,
-		JTI:       sessionID, // reutiliza jti da sessao
+		JTI:       sessionID,
 		Email:     email,
 		Role:      role,
 		SessionID: sessionID,
@@ -46,7 +48,6 @@ func (s *Service) GenerateAccessToken(userID uint, email, role string, sessionID
 			Subject:   fmt.Sprintf("%d", userID),
 		},
 	}
-
 	token := jwtv5.NewWithClaims(jwtv5.SigningMethodHS256, claims)
 	return token.SignedString(s.secret)
 }
@@ -64,7 +65,48 @@ func (s *Service) GenerateRefreshToken(userID uint) (string, error) {
 			Subject:   fmt.Sprintf("%d", userID),
 		},
 	}
-
 	token := jwtv5.NewWithClaims(jwtv5.SigningMethodHS256, claims)
 	return token.SignedString(s.secret)
+}
+
+func (s *Service) ValidateToken(tokenString string) (*ports.JWTClaims, error) {
+	token, err := jwtv5.ParseWithClaims(tokenString, &Claims{}, func(token *jwtv5.Token) (interface{}, error) {
+		return s.secret, nil
+	})
+	if err != nil || !token.Valid {
+		return nil, fmt.Errorf("invalid token: %w", err)
+	}
+	claims, ok := token.Claims.(*Claims)
+	if !ok {
+		return nil, fmt.Errorf("invalid token claims")
+	}
+	return &ports.JWTClaims{
+		UserID:    claims.UserID,
+		JTI:       claims.JTI,
+		Email:     claims.Email,
+		Role:      claims.Role,
+		SessionID: claims.SessionID,
+		ExpiresAt: claims.ExpiresAt.Time,
+	}, nil
+}
+
+func (s *Service) ExtractUserIDFromToken(tokenString string) (uint, error) {
+	claims, err := s.ValidateToken(tokenString)
+	if err != nil {
+		return 0, err
+	}
+	return claims.UserID, nil
+}
+
+func (s *Service) IsTokenExpired(tokenString string) bool {
+	_, err := s.ValidateToken(tokenString)
+	return err != nil
+}
+
+func (s *Service) RefreshAccessToken(refreshTokenString, email, role, sessionID string) (string, error) {
+	claims, err := s.ValidateToken(refreshTokenString)
+	if err != nil {
+		return "", err
+	}
+	return s.GenerateAccessToken(claims.UserID, email, role, sessionID)
 }

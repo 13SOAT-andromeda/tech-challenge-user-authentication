@@ -2,7 +2,6 @@ package repositories
 
 import (
 	"context"
-	"tech-challenge-user-validation/internal/adapters/database/model"
 	"testing"
 
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
@@ -32,7 +31,7 @@ func TestTokenRepository_Save(t *testing.T) {
 			},
 		}
 
-		repo := model.NewTokenRepository(mockSvc, "user-auth-tokens")
+		repo := NewTokenRepository(mockSvc, "user-auth-tokens")
 		err := repo.Save(ctx, pk, token, expiresAt)
 
 		if err != nil {

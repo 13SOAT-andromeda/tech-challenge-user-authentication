@@ -4,9 +4,12 @@ import (
 	"context"
 	"errors"
 	"regexp"
+	"strconv"
 	"time"
 
 	"tech-challenge-user-validation/internal/core/ports"
+
+	"github.com/golang-jwt/jwt/v5"
 )
 
 type AuthUseCase struct {
@@ -19,12 +22,14 @@ type AuthUseCase struct {
 
 func NewAuthUseCase(
 	userRepo ports.UserRepository,
+	tokenRepo ports.TokenRepository,
 	sessionService ports.SessionService,
 	jwtService ports.JWTService,
 	secret string,
 ) *AuthUseCase {
 	return &AuthUseCase{
 		userRepo:       userRepo,
+		tokenRepo:      tokenRepo,
 		sessionService: sessionService,
 		jwtService:     jwtService,
 		jwtSecret:      []byte(secret),
@@ -52,10 +57,16 @@ func (uc *AuthUseCase) Login(ctx context.Context, input ports.LoginInput) (*port
 		return nil, err
 	}
 
+	claims, err := uc.jwtService.ValidateToken(refreshToken)
+	if err != nil {
+		return nil, err
+	}
+	jti := claims.JTI
+
 	refreshExpiry := 7 * 24 * time.Hour
 	sessionExpiresAt := time.Now().Add(refreshExpiry)
 
-	session, err := uc.sessionService.Create(ctx, user.ID, refreshToken, sessionExpiresAt)
+	session, err := uc.sessionService.Create(ctx, jti, strconv.Itoa(int(user.ID)), sessionExpiresAt.Unix())
 	if err != nil {
 		return nil, err
 	}
@@ -75,12 +86,40 @@ func (uc *AuthUseCase) Login(ctx context.Context, input ports.LoginInput) (*port
 		Role:    user.Role,
 	}
 
-	output := &ports.LoginOutput{
+	return &ports.LoginOutput{
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
 		ExpiresIn:    int64(accessExpiry.Seconds()),
+		JTI:          jti,
 		User:         userOutput,
+	}, nil
+}
+
+func (uc *AuthUseCase) Validate(ctx context.Context, tokenString string) (bool, error) {
+	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+		return uc.jwtSecret, nil
+	})
+	if err != nil || !token.Valid {
+		return false, errors.New("invalid token")
 	}
 
-	return output, nil
+	mapClaims, ok := token.Claims.(jwt.MapClaims)
+	if !ok {
+		return false, errors.New("invalid token claims")
+	}
+
+	jti, ok := mapClaims["jti"].(string)
+	if !ok || jti == "" {
+		return false, errors.New("invalid token: missing jti")
+	}
+
+	session, err := uc.sessionService.GetByID(ctx, jti)
+	if err != nil {
+		return false, err
+	}
+	if session == nil {
+		return false, errors.New("session not found or revoked")
+	}
+
+	return true, nil
 }

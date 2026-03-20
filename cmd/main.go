@@ -67,7 +67,7 @@ func main() {
 
 	jwtSvc := jwtadapter.NewService(jwtSecret, 15*time.Minute, 24*time.Hour)
 	sessionSvc := services.NewSessionService()
-	authUseCase := usecases.NewAuthUseCase(userRepo, sessionSvc, jwtSvc, jwtSecret)
+	authUseCase := usecases.NewAuthUseCase(userRepo, nil, sessionSvc, jwtSvc, jwtSecret)
 
 	authHandler := handlers.NewAuthHandler(authUseCase)
 
