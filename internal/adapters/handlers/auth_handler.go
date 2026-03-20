@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"tech-challenge-user-validation/internal/core/ports"
 	"tech-challenge-user-validation/internal/core/usecases"
 
 	"github.com/aws/aws-lambda-go/events"
@@ -21,19 +22,31 @@ func NewAuthHandler(uc *usecases.AuthUseCase) *AuthHandler {
 }
 
 func (h *AuthHandler) Handle(ctx context.Context, req events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
-	Document := req.Headers["x-user-cpf"]
-	if Document == "" {
-		return h.errorResponse(http.StatusBadRequest, "x-user-cpf header is required"), nil
+	var input ports.LoginInput
+
+	// 1) Parse body JSON
+	if err := json.Unmarshal([]byte(req.Body), &input); err != nil {
+		return h.errorResponse(http.StatusBadRequest, "invalid request body"), nil
 	}
 
-	token, err := h.authUseCase.Authenticate(ctx, Document)
+	// 2) Validate required fields
+	if input.Document == "" {
+		return h.errorResponse(http.StatusBadRequest, "document is required"), nil
+	}
+	if input.Password == "" {
+		return h.errorResponse(http.StatusBadRequest, "password is required"), nil
+	}
+
+	// 3) Execute login use case
+	output, err := h.authUseCase.Login(ctx, input)
 	if err != nil {
 		return h.errorResponse(http.StatusUnauthorized, err.Error()), nil
 	}
 
-	body, _ := json.Marshal(map[string]string{
-		"token": token,
-	})
+	body, err := json.Marshal(output)
+	if err != nil {
+		return h.errorResponse(http.StatusInternalServerError, "failed to serialize response"), nil
+	}
 
 	return events.APIGatewayProxyResponse{
 		StatusCode: http.StatusOK,

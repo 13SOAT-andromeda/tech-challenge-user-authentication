@@ -1,8 +1,0 @@
-{
-  "track_id": "user_refactor_20260318",
-  "type": "refactor",
-  "status": "new",
-  "created_at": "2026-03-18T10:00:00Z",
-  "updated_at": "2026-03-18T10:00:00Z",
-  "description": "Refactor the Lambda tech-challenge-user-validation to sync the User model and repository structure with reference files, standardizing names and creating unit tests."
-}

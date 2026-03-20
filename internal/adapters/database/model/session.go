@@ -1,17 +1,11 @@
 package model
 
-import "tech-challenge-user-validation/internal/core/ports"
+import (
+	"time"
+)
 
 type SessionModel struct {
-	PK        string `dynamodbav:"pk"`
-	UserID    string `dynamodbav:"user_id"`
-	ExpiresAt int64  `dynamodbav:"expires_at"`
-}
-
-func (m *SessionModel) ToDomain() *ports.Session {
-	return &ports.Session{
-		ID:        m.PK,
-		UserID:    m.UserID,
-		ExpiresAt: m.ExpiresAt,
-	}
+	UserID       uint      `dynamodbav:"token_id"`
+	RefreshToken *string   `dynamodbav:"refresh_token,omitempty"`
+	ExpiresAt    time.Time `dynamodbav:"expires_at,omitempty"`
 }

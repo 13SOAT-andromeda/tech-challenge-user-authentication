@@ -4,112 +4,86 @@ import (
 	"context"
 	"errors"
 	"regexp"
+	"strconv"
 	"time"
 
 	"tech-challenge-user-validation/internal/core/ports"
 
 	"github.com/golang-jwt/jwt/v5"
-	"github.com/google/uuid"
 )
 
 type AuthUseCase struct {
-	userRepo    ports.UserRepository
-	tokenRepo   ports.TokenRepository
+	userRepo       ports.UserRepository
+	tokenRepo      ports.TokenRepository
 	sessionService ports.SessionService
-	jwtSecret   []byte
+	jwtService     ports.JWTService
+	jwtSecret      []byte
 }
 
-func NewAuthUseCase(userRepo ports.UserRepository, tokenRepo ports.TokenRepository, sessionService ports.SessionService, secret string) *AuthUseCase {
+func NewAuthUseCase(
+	userRepo ports.UserRepository,
+	sessionService ports.SessionService,
+	jwtService ports.JWTService,
+	secret string,
+) *AuthUseCase {
 	return &AuthUseCase{
 		userRepo:       userRepo,
-		tokenRepo:      tokenRepo,
 		sessionService: sessionService,
+		jwtService:     jwtService,
 		jwtSecret:      []byte(secret),
 	}
 }
 
-var DocumentRegex = regexp.MustCompile(`^(\d{3}\.\d{3}\.\d{3}\-\d{2})?$`)
+var DocumentRegex = regexp.MustCompile(`^\d{3}\.\d{3}\.\d{3}-\d{2}$`)
 
-func (uc *AuthUseCase) Authenticate(ctx context.Context, Document string) (string, error) {
-	if !DocumentRegex.MatchString(Document) {
-		return "", errors.New("invalid Document format")
+func (uc *AuthUseCase) Login(ctx context.Context, input ports.LoginInput) (*ports.LoginOutput, error) {
+	if !DocumentRegex.MatchString(input.Document) {
+		return nil, errors.New("invalid document format")
 	}
 
-	user, err := uc.userRepo.GetByDocument(ctx, Document)
+	user, err := uc.userRepo.GetByDocument(ctx, input.Document)
+	if err != nil || user == nil {
+		return nil, errors.New("user not found")
+	}
+
+	if err := user.Password.Compare(input.Password); err != nil || user.DeletedAt != nil || !user.IsActive {
+		return nil, errors.New("user not found")
+	}
+
+	refreshToken, err := uc.jwtService.GenerateRefreshToken(user.ID)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
-	if user == nil {
-		return "", errors.New("user not found")
-	}
+	refreshExpiry := 7 * 24 * time.Hour
+	sessionExpiresAt := time.Now().Add(refreshExpiry)
 
-	if !user.IsActive {
-		return "", errors.New("user is inactive")
-	}
-
-	// Generate JTI (UUID v4)
-	jti := uuid.New().String()
-
-	// Expiry: 24 hours
-	expiresAt := time.Now().Add(24 * time.Hour).Unix()
-
-	// Generate JWT
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"sub":      user.ID,
-		"Document": user.Document,
-		"jti":      jti,
-		"exp":      expiresAt,
-	})
-
-	tokenString, err := token.SignedString(uc.jwtSecret)
+	session, err := uc.sessionService.Create(ctx, , refreshToken, sessionExpiresAt)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
-	// 1. Save minimalist session in SessionService (DynamoDB)
-	_, err = uc.sessionService.Create(ctx, jti, user.Document, expiresAt)
+	accessToken, err := uc.jwtService.GenerateAccessToken(user.ID, user.Email, user.Role, session.ID)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
-	// 2. Backward compatibility: Save token in TokenRepository (if still needed)
-	err = uc.tokenRepo.Save(ctx, user.Document, tokenString, expiresAt)
-	if err != nil {
-		return "", err
+	accessExpiry := 1 * time.Hour
+
+	userOutput := ports.UserOutput{
+		ID:      user.ID,
+		Name:    user.Name,
+		Email:   user.Email,
+		Contact: user.Contact,
+		Role:    user.Role,
 	}
 
-	return tokenString, nil
-}
-
-func (uc *AuthUseCase) Validate(ctx context.Context, tokenString string) (bool, error) {
-	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-		return uc.jwtSecret, nil
-	})
-
-	if err != nil || !token.Valid {
-		return false, errors.New("invalid token")
+	output := &ports.LoginOutput{
+		AccessToken:  accessToken,
+		RefreshToken: refreshToken,
+		ExpiresIn:    int64(accessExpiry.Seconds()),
+		User:         userOutput,
 	}
 
-	claims, ok := token.Claims.(jwt.MapClaims)
-	if !ok {
-		return false, errors.New("invalid claims")
-	}
-
-	jti, ok := claims["jti"].(string)
-	if !ok {
-		return false, errors.New("jti not found in token")
-	}
-
-	// Verify session exists in DynamoDB
-	session, err := uc.sessionService.GetByID(ctx, jti)
-	if err != nil {
-		return false, err
-	}
-
-	if session == nil {
-		return false, errors.New("session not found or revoked")
-	}
-
-	return true, nil
+	return output, nil
 }
