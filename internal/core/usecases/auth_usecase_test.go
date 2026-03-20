@@ -24,9 +24,7 @@ func (h *mockHasher) Compare(hashedPassword, password string) error {
 }
 
 type mockUserRepository struct {
-	getUserFunc    func(ctx context.Context, document string) (*domain.User, error)
-	getByEmailFunc func(ctx context.Context, email string) (*domain.User, error)
-	searchFunc     func(ctx context.Context, params ports.UserSearch) []domain.User
+	getUserFunc func(ctx context.Context, document string) (*domain.User, error)
 }
 
 func (m *mockUserRepository) GetByDocument(ctx context.Context, document string) (*domain.User, error) {
@@ -34,20 +32,6 @@ func (m *mockUserRepository) GetByDocument(ctx context.Context, document string)
 		return m.getUserFunc(ctx, document)
 	}
 	return nil, nil
-}
-
-func (m *mockUserRepository) GetByEmail(ctx context.Context, email string) (*domain.User, error) {
-	if m.getByEmailFunc != nil {
-		return m.getByEmailFunc(ctx, email)
-	}
-	return nil, nil
-}
-
-func (m *mockUserRepository) Search(ctx context.Context, params ports.UserSearch) []domain.User {
-	if m.searchFunc != nil {
-		return m.searchFunc(ctx, params)
-	}
-	return nil
 }
 
 type mockTokenRepository struct {

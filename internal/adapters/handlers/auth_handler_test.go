@@ -43,13 +43,6 @@ func (m *mockUserRepository) GetByDocument(ctx context.Context, document string)
 	return nil, nil
 }
 
-func (m *mockUserRepository) GetByEmail(ctx context.Context, email string) (*domain.User, error) {
-	return nil, nil
-}
-
-func (m *mockUserRepository) Search(ctx context.Context, params ports.UserSearch) []domain.User {
-	return nil
-}
 
 type mockTokenRepository struct{}
 
