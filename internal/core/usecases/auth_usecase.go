@@ -4,12 +4,9 @@ import (
 	"context"
 	"errors"
 	"regexp"
-	"strconv"
 	"time"
 
 	"tech-challenge-user-validation/internal/core/ports"
-
-	"github.com/golang-jwt/jwt/v5"
 )
 
 type AuthUseCase struct {
@@ -58,7 +55,7 @@ func (uc *AuthUseCase) Login(ctx context.Context, input ports.LoginInput) (*port
 	refreshExpiry := 7 * 24 * time.Hour
 	sessionExpiresAt := time.Now().Add(refreshExpiry)
 
-	session, err := uc.sessionService.Create(ctx, , refreshToken, sessionExpiresAt)
+	session, err := uc.sessionService.Create(ctx, user.ID, refreshToken, sessionExpiresAt)
 	if err != nil {
 		return nil, err
 	}

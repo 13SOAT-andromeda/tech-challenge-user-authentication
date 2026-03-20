@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"tech-challenge-user-validation/internal/adapters/database/model"
 	services "tech-challenge-user-validation/internal/service"
 	"time"
 
@@ -26,8 +25,9 @@ import (
 func main() {
 	// 1. JWT Secret
 	jwtSecret := os.Getenv("JWT_SECRET")
+
 	if jwtSecret == "" {
-		jwtSecret = "default-secret-for-local-dev"
+		panic("JWT_SECRET is not set")
 	}
 
 	// 2. Postgres Connection (GORM)
@@ -63,7 +63,7 @@ func main() {
 
 	// 4. Dependency Injection
 	userRepo := repositories.NewUserRepository(db)
-	sessionSvc := repositories.NewSessionRepository(dynamoClient, tableName)
+	_ = repositories.NewSessionRepository(dynamoClient, tableName)
 
 	jwtSvc := jwtadapter.NewService(jwtSecret, 15*time.Minute, 24*time.Hour)
 	sessionSvc := services.NewSessionService()

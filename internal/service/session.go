@@ -17,7 +17,7 @@ func NewSessionService() *sessionService {
 	return &sessionService{}
 }
 
-func (s *sessionService) Create(ctx context.Context, userID uint, expiresAt time.Time) (*ports.Session, error) {
+func (s *sessionService) Create(ctx context.Context, userID uint, refreshToken string, expiresAt time.Time) (*ports.Session, error) {
 	if userID == 0 {
 		return nil, errors.New("invalid user ID")
 	}
@@ -29,7 +29,7 @@ func (s *sessionService) Create(ctx context.Context, userID uint, expiresAt time
 	return &ports.Session{
 		ID:        uuid.NewString(),
 		UserID:    strconv.Itoa(int(userID)),
-		ExpiresAt: time.time,
+		ExpiresAt: expiresAt,
 	}, nil
 }
 

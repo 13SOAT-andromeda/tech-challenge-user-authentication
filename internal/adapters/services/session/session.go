@@ -3,11 +3,17 @@ package session
 import (
 	"context"
 	"errors"
+	"strconv"
 	"strings"
 	"time"
 
-	"tech-challenge-user-validation/internal/core/domain"
+	"tech-challenge-user-validation/internal/core/ports"
 )
+
+type repository interface {
+	Create(ctx context.Context, s *ports.Session) (*ports.Session, error)
+	FindByID(ctx context.Context, sessionID uint) (*ports.Session, error)
+}
 
 type sessionService struct {
 	repo repository
@@ -17,7 +23,7 @@ func NewSessionService(repo repository) *sessionService {
 	return &sessionService{repo: repo}
 }
 
-func (s *sessionService) Create(ctx context.Context, userID uint, refreshToken string, expiresAt time.Time) (*domain.Session, error) {
+func (s *sessionService) Create(ctx context.Context, userID uint, refreshToken string, expiresAt time.Time) (*ports.Session, error) {
 	if userID == 0 {
 		return nil, errors.New("invalid user ID")
 	}
@@ -32,14 +38,18 @@ func (s *sessionService) Create(ctx context.Context, userID uint, refreshToken s
 		return nil, errors.New("expiration date must be in the future")
 	}
 
-	session := (userID, refreshToken, expiresAt)
+	session := &ports.Session{
+		UserID:    strconv.Itoa(int(userID)),
+		ExpiresAt: expiresAt,
+	}
 	return s.repo.Create(ctx, session)
 }
 
-func (s *sessionService) GetByID(ctx context.Context, sessionID uint) (*domain.Session, error) {
-	if sessionID == 0 {
+func (s *sessionService) GetByID(ctx context.Context, sessionID string) (*ports.Session, error) {
+	id, err := strconv.ParseUint(sessionID, 10, 64)
+	if err != nil || id == 0 {
 		return nil, errors.New("invalid session ID")
 	}
 
-	return s.repo.FindByID(ctx, sessionID)
+	return s.repo.FindByID(ctx, uint(id))
 }

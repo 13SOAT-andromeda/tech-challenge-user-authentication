@@ -1,14 +1,17 @@
 package ports
 
-import "context"
+import (
+	"context"
+	"time"
+)
 
 type Session struct {
 	ID        string
 	UserID    string
-	ExpiresAt int64
+	ExpiresAt time.Time
 }
 
 type SessionService interface {
-	Create(ctx context.Context, sessionID string, userID string, expiresAt int64) (*Session, error)
+	Create(ctx context.Context, userID uint, refreshToken string, expiresAt time.Time) (*Session, error)
 	GetByID(ctx context.Context, sessionID string) (*Session, error)
 }
