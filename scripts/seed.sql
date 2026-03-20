@@ -15,7 +15,7 @@ INSERT INTO "User" (
     '+5511999999999',
     '123.456.789-00',
     true,
-    '$2b$12$PZLp69vH.c/.GSu9RpWwYe8BPUkGkSF6.7rzAOpMA.PDfIAxzbr0.',
+    '$2a$10$/1jabFqWFbWzAfIEIkPOrOVJW8EiBJQv3HRCrHOxKXAgbpxChV9dC', -- password: admin123
     'admin',
     NOW(),
     NOW(),

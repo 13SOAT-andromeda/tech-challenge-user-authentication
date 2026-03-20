@@ -7,10 +7,12 @@ import (
 
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
+	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 )
 
 type SessionDynamoClient interface {
 	PutItem(ctx context.Context, params *dynamodb.PutItemInput, optFns ...func(*dynamodb.Options)) (*dynamodb.PutItemOutput, error)
+	GetItem(ctx context.Context, params *dynamodb.GetItemInput, optFns ...func(*dynamodb.Options)) (*dynamodb.GetItemOutput, error)
 }
 
 type SessionRepository struct {
@@ -38,3 +40,25 @@ func (r *SessionRepository) Save(ctx context.Context, s model.SessionModel) erro
 
 	return nil
 }
+
+func (r *SessionRepository) FindBySessionID(ctx context.Context, sessionID string) (*model.SessionModel, error) {
+	out, err := r.client.GetItem(ctx, &dynamodb.GetItemInput{
+		TableName: &r.tableName,
+		Key: map[string]types.AttributeValue{
+			"token_id": &types.AttributeValueMemberS{Value: sessionID},
+		},
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get session item: %w", err)
+	}
+	if out.Item == nil {
+		return nil, nil
+	}
+
+	var s model.SessionModel
+	if err := attributevalue.UnmarshalMap(out.Item, &s); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal session: %w", err)
+	}
+	return &s, nil
+}
+

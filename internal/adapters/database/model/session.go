@@ -5,7 +5,7 @@ import (
 )
 
 type SessionModel struct {
-	UserID       uint      `dynamodbav:"token_id"`
-	RefreshToken *string   `dynamodbav:"refresh_token,omitempty"`
-	ExpiresAt    time.Time `dynamodbav:"expires_at,omitempty"`
+	SessionID string    `dynamodbav:"token_id"`
+	UserID    string    `dynamodbav:"user_id"`
+	ExpiresAt time.Time `dynamodbav:"expires_at,omitempty"`
 }

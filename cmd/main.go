@@ -63,10 +63,10 @@ func main() {
 
 	// 4. Dependency Injection
 	userRepo := repositories.NewUserRepository(db)
-	_ = repositories.NewSessionRepository(dynamoClient, tableName)
+	sessionRepo := repositories.NewSessionRepository(dynamoClient, tableName)
 
 	jwtSvc := jwtadapter.NewService(jwtSecret, 15*time.Minute, 24*time.Hour)
-	sessionSvc := services.NewSessionService()
+	sessionSvc := services.NewSessionService(sessionRepo)
 	authUseCase := usecases.NewAuthUseCase(userRepo, nil, sessionSvc, jwtSvc, jwtSecret)
 
 	authHandler := handlers.NewAuthHandler(authUseCase)
