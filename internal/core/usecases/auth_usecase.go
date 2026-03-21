@@ -57,10 +57,11 @@ func (uc *AuthUseCase) Login(ctx context.Context, input ports.LoginInput) (*port
 		return nil, err
 	}
 
-	claims, err := uc.jwtService.ValidateToken(refreshToken)
+	claims, err := uc.jwtService.ValidateRefreshToken(refreshToken)
 	if err != nil {
 		return nil, err
 	}
+
 	jti := claims.JTI
 
 	refreshExpiry := 7 * 24 * time.Hour
@@ -93,6 +94,52 @@ func (uc *AuthUseCase) Login(ctx context.Context, input ports.LoginInput) (*port
 		JTI:          jti,
 		User:         userOutput,
 	}, nil
+}
+
+func (uc *AuthUseCase) Refresh(ctx context.Context, input ports.RefreshInput) (*ports.RefreshOutput, error) {
+	claims, err := uc.jwtService.ValidateRefreshToken(input.RefreshToken)
+	if err != nil {
+		return nil, errors.New("invalid refresh token")
+	}
+
+	session, err := uc.sessionService.GetByID(ctx, claims.JTI)
+	if err != nil || session == nil {
+		return nil, errors.New("session not found or revoked")
+	}
+
+	if time.Now().Unix() > session.ExpiresAt {
+		return nil, errors.New("session expired")
+	}
+
+	user, err := uc.userRepo.GetByID(ctx, claims.UserID)
+	if err != nil || user == nil {
+		return nil, errors.New("user not found")
+	}
+
+	accessToken, err := uc.jwtService.GenerateAccessToken(user.ID, user.Email, user.Role, session.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	accessExpiry := 1 * time.Hour
+	return &ports.RefreshOutput{
+		AccessToken: accessToken,
+		ExpiresIn:   int64(accessExpiry.Seconds()),
+	}, nil
+}
+
+func (uc *AuthUseCase) Logout(ctx context.Context, tokenString string) error {
+	claims, err := uc.jwtService.ValidateToken(tokenString)
+	if err != nil {
+		return errors.New("invalid token")
+	}
+
+	sessionID := claims.SessionID
+	if sessionID == "" {
+		sessionID = claims.JTI
+	}
+
+	return uc.sessionService.Delete(ctx, sessionID)
 }
 
 func (uc *AuthUseCase) Validate(ctx context.Context, tokenString string) (bool, error) {

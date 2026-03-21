@@ -23,11 +23,15 @@ import (
 )
 
 func main() {
-	// 1. JWT Secret
+	// 1. JWT Secrets
 	jwtSecret := os.Getenv("JWT_SECRET")
-
 	if jwtSecret == "" {
 		panic("JWT_SECRET is not set")
+	}
+
+	jwtRefreshSecret := os.Getenv("JWT_REFRESH_SECRET")
+	if jwtRefreshSecret == "" {
+		panic("JWT_REFRESH_SECRET is not set")
 	}
 
 	// 2. Postgres Connection (GORM)
@@ -52,11 +56,15 @@ func main() {
 
 	// 3. DynamoDB Connection
 	cfg, err := config.LoadDefaultConfig(context.TODO())
+
 	if err != nil {
 		log.Fatalf("unable to load SDK config, %v", err)
 	}
+
 	dynamoClient := dynamodb.NewFromConfig(cfg)
+
 	tableName := os.Getenv("DYNAMODB_TABLE_NAME")
+
 	if tableName == "" {
 		tableName = "user-auth-tokens"
 	}
@@ -65,7 +73,7 @@ func main() {
 	userRepo := repositories.NewUserRepository(db)
 	sessionRepo := repositories.NewSessionRepository(dynamoClient, tableName)
 
-	jwtSvc := jwtadapter.NewService(jwtSecret, 15*time.Minute, 24*time.Hour)
+	jwtSvc := jwtadapter.NewService(jwtSecret, jwtRefreshSecret, 15*time.Minute, 24*time.Hour)
 	sessionSvc := services.NewSessionService(sessionRepo)
 	authUseCase := usecases.NewAuthUseCase(userRepo, nil, sessionSvc, jwtSvc, jwtSecret)
 

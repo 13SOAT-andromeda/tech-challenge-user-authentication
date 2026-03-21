@@ -1,0 +1,55 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: User Authentication Lambda
+
+Globals:
+  Function:
+    Runtime: provided.al2023
+    Architectures:
+      - x86_64
+    Timeout: 30
+    Environment:
+      Variables:
+        JWT_SECRET: local-dev-secret
+        JWT_REFRESH_SECRET: local-dev-refresh-secret
+        DB_HOST: localstack-postgres
+        DB_USER: postgres
+        DB_PASSWORD: postgres
+        DB_NAME: authdb
+        DB_PORT: "5432"
+        DYNAMODB_TABLE_NAME: user-auth-tokens
+        AWS_ENDPOINT_URL: http://localstack:4566
+        AWS_ACCESS_KEY_ID: test
+        AWS_SECRET_ACCESS_KEY: test
+        AWS_REGION: us-east-1
+
+Resources:
+  UserAuthFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: user-auth-function
+      CodeUri: cmd/
+      Handler: bootstrap
+      Events:
+        Login:
+          Type: Api
+          Properties:
+            Path: /sessions
+            Method: post
+        ValidateSession:
+          Type: Api
+          Properties:
+            Path: /sessions/validate
+            Method: get
+        RefreshSession:
+          Type: Api
+          Properties:
+            Path: /sessions/refresh
+            Method: post
+        Logout:
+          Type: Api
+          Properties:
+            Path: /sessions/logout
+            Method: delete
+    Metadata:
+      BuildMethod: go1.x

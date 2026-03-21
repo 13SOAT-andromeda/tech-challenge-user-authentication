@@ -207,6 +207,28 @@ logs:
 		--function-name $(FUNCTION_NAME) \
 		--region $(REGION)
 
+.PHONY: sessions
+sessions:
+	$(AWSLOCAL) dynamodb scan \
+		--table-name $(DYNAMO_TABLE) \
+		--region $(REGION)
+
+.PHONY: sessions-flush
+sessions-flush:
+	@echo "Flushing all sessions from $(DYNAMO_TABLE)..."
+	@$(AWSLOCAL) dynamodb scan \
+		--table-name $(DYNAMO_TABLE) \
+		--region $(REGION) \
+		--query 'Items[*].token_id.S' \
+		--output text | tr '\t' '\n' | while read id; do \
+			$(AWSLOCAL) dynamodb delete-item \
+				--table-name $(DYNAMO_TABLE) \
+				--key "{\"token_id\":{\"S\":\"$$id\"}}" \
+				--region $(REGION); \
+			echo "Deleted: $$id"; \
+		done
+	@echo "Done."
+
 # ─── Shortcuts ─────────────────────────────────────────────────────────────────
 .PHONY: local
 local: localstack-up setup-infra deploy
@@ -235,6 +257,8 @@ help:
 	@echo "  make curl             POST /sessions via API Gateway"
 	@echo "  make invoke           Direct Lambda invoke (no API Gateway)"
 	@echo "  make logs             Show function metadata"
+	@echo "  make sessions         List all sessions in DynamoDB"
+	@echo "  make sessions-flush   Delete all sessions from DynamoDB"
 	@echo "  make clean            Remove build artifacts"
 	@echo "  make test             Run all tests"
 	@echo ""

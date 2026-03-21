@@ -21,13 +21,15 @@ type Claims struct {
 
 type Service struct {
 	secret             []byte
+	refreshSecret      []byte
 	accessTokenExpiry  time.Duration
 	refreshTokenExpiry time.Duration
 }
 
-func NewService(secret string, accessTokenExpiry, refreshTokenExpiry time.Duration) *Service {
+func NewService(secret, refreshSecret string, accessTokenExpiry, refreshTokenExpiry time.Duration) *Service {
 	return &Service{
 		secret:             []byte(secret),
+		refreshSecret:      []byte(refreshSecret),
 		accessTokenExpiry:  accessTokenExpiry,
 		refreshTokenExpiry: refreshTokenExpiry,
 	}
@@ -66,12 +68,20 @@ func (s *Service) GenerateRefreshToken(userID uint) (string, error) {
 		},
 	}
 	token := jwtv5.NewWithClaims(jwtv5.SigningMethodHS256, claims)
-	return token.SignedString(s.secret)
+	return token.SignedString(s.refreshSecret)
 }
 
 func (s *Service) ValidateToken(tokenString string) (*ports.JWTClaims, error) {
+	return s.parseToken(tokenString, s.secret)
+}
+
+func (s *Service) ValidateRefreshToken(tokenString string) (*ports.JWTClaims, error) {
+	return s.parseToken(tokenString, s.refreshSecret)
+}
+
+func (s *Service) parseToken(tokenString string, secret []byte) (*ports.JWTClaims, error) {
 	token, err := jwtv5.ParseWithClaims(tokenString, &Claims{}, func(token *jwtv5.Token) (interface{}, error) {
-		return s.secret, nil
+		return secret, nil
 	})
 	if err != nil || !token.Valid {
 		return nil, fmt.Errorf("invalid token: %w", err)
@@ -104,7 +114,7 @@ func (s *Service) IsTokenExpired(tokenString string) bool {
 }
 
 func (s *Service) RefreshAccessToken(refreshTokenString, email, role, sessionID string) (string, error) {
-	claims, err := s.ValidateToken(refreshTokenString)
+	claims, err := s.ValidateRefreshToken(refreshTokenString)
 	if err != nil {
 		return "", err
 	}

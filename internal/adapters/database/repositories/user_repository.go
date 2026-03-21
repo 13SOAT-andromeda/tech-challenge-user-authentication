@@ -31,3 +31,15 @@ func (u *userRepository) GetByDocument(ctx context.Context, document string) (*d
 	}
 	return model.ToDomain(), nil
 }
+
+func (u *userRepository) GetByID(ctx context.Context, id uint) (*domain.User, error) {
+	model := user.Model{}
+	err := u.db.First(&model, id).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return model.ToDomain(), nil
+}

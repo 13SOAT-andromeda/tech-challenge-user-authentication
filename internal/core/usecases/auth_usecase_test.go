@@ -24,12 +24,20 @@ func (h *mockHasher) Compare(hashedPassword, password string) error {
 }
 
 type mockUserRepository struct {
-	getUserFunc func(ctx context.Context, document string) (*domain.User, error)
+	getUserFunc    func(ctx context.Context, document string) (*domain.User, error)
+	getUserByIDFunc func(ctx context.Context, id uint) (*domain.User, error)
 }
 
 func (m *mockUserRepository) GetByDocument(ctx context.Context, document string) (*domain.User, error) {
 	if m.getUserFunc != nil {
 		return m.getUserFunc(ctx, document)
+	}
+	return nil, nil
+}
+
+func (m *mockUserRepository) GetByID(ctx context.Context, id uint) (*domain.User, error) {
+	if m.getUserByIDFunc != nil {
+		return m.getUserByIDFunc(ctx, id)
 	}
 	return nil, nil
 }
@@ -48,6 +56,7 @@ func (m *mockTokenRepository) Save(ctx context.Context, pk string, token string,
 type mockSessionService struct {
 	createFunc func(ctx context.Context, sessionID string, userID string, expiresAt int64) (*ports.Session, error)
 	getFunc    func(ctx context.Context, sessionID string) (*ports.Session, error)
+	deleteFunc func(ctx context.Context, sessionID string) error
 }
 
 func (m *mockSessionService) Create(ctx context.Context, sessionID string, userID string, expiresAt int64) (*ports.Session, error) {
@@ -64,13 +73,21 @@ func (m *mockSessionService) GetByID(ctx context.Context, sessionID string) (*po
 	return nil, nil
 }
 
+func (m *mockSessionService) Delete(ctx context.Context, sessionID string) error {
+	if m.deleteFunc != nil {
+		return m.deleteFunc(ctx, sessionID)
+	}
+	return nil
+}
+
 type mockJWTService struct {
-	generateAccessTokenFunc  func(userID uint, email, role, sessionID string) (string, error)
-	generateRefreshTokenFunc func(userID uint) (string, error)
-	validateTokenFunc        func(tokenString string) (*ports.JWTClaims, error)
-	extractUserIDFunc        func(tokenString string) (uint, error)
-	isTokenExpiredFunc       func(tokenString string) bool
-	refreshAccessTokenFunc   func(refreshTokenString, email, role, sessionID string) (string, error)
+	generateAccessTokenFunc    func(userID uint, email, role, sessionID string) (string, error)
+	generateRefreshTokenFunc   func(userID uint) (string, error)
+	validateTokenFunc          func(tokenString string) (*ports.JWTClaims, error)
+	validateRefreshTokenFunc   func(tokenString string) (*ports.JWTClaims, error)
+	extractUserIDFunc          func(tokenString string) (uint, error)
+	isTokenExpiredFunc         func(tokenString string) bool
+	refreshAccessTokenFunc     func(refreshTokenString, email, role, sessionID string) (string, error)
 }
 
 func (m *mockJWTService) GenerateAccessToken(userID uint, email, role, sessionID string) (string, error) {
@@ -90,6 +107,17 @@ func (m *mockJWTService) GenerateRefreshToken(userID uint) (string, error) {
 func (m *mockJWTService) ValidateToken(tokenString string) (*ports.JWTClaims, error) {
 	if m.validateTokenFunc != nil {
 		return m.validateTokenFunc(tokenString)
+	}
+	return &ports.JWTClaims{
+		UserID:    1,
+		JTI:       "jti-default",
+		ExpiresAt: time.Now().Add(24 * time.Hour),
+	}, nil
+}
+
+func (m *mockJWTService) ValidateRefreshToken(tokenString string) (*ports.JWTClaims, error) {
+	if m.validateRefreshTokenFunc != nil {
+		return m.validateRefreshTokenFunc(tokenString)
 	}
 	return &ports.JWTClaims{
 		UserID:    1,
@@ -219,7 +247,7 @@ func TestAuthUseCase_Login(t *testing.T) {
 			generateRefreshTokenFunc: func(userID uint) (string, error) {
 				return "refresh-token-abc", nil
 			},
-			validateTokenFunc: func(tokenString string) (*ports.JWTClaims, error) {
+			validateRefreshTokenFunc: func(tokenString string) (*ports.JWTClaims, error) {
 				return &ports.JWTClaims{
 					UserID:    1,
 					JTI:       expectedJTI,

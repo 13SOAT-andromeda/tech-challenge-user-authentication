@@ -22,14 +22,27 @@ func NewAuthHandler(uc *usecases.AuthUseCase) *AuthHandler {
 }
 
 func (h *AuthHandler) Handle(ctx context.Context, req events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
+	switch {
+	case req.HTTPMethod == http.MethodPost && req.Path == "/sessions":
+		return h.handleLogin(ctx, req)
+	case req.HTTPMethod == http.MethodGet && req.Path == "/sessions/validate":
+		return h.handleValidate(ctx, req)
+	case req.HTTPMethod == http.MethodPost && req.Path == "/sessions/refresh":
+		return h.handleRefresh(ctx, req)
+	case req.HTTPMethod == http.MethodDelete && req.Path == "/sessions/logout":
+		return h.handleLogout(ctx, req)
+	default:
+		return h.errorResponse(http.StatusNotFound, "route not found"), nil
+	}
+}
+
+func (h *AuthHandler) handleLogin(ctx context.Context, req events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
 	var input ports.LoginInput
 
-	// 1) Parse body JSON
 	if err := json.Unmarshal([]byte(req.Body), &input); err != nil {
 		return h.errorResponse(http.StatusBadRequest, "invalid request body"), nil
 	}
 
-	// 2) Validate required fields
 	if input.Document == "" {
 		return h.errorResponse(http.StatusBadRequest, "document is required"), nil
 	}
@@ -37,7 +50,6 @@ func (h *AuthHandler) Handle(ctx context.Context, req events.APIGatewayProxyRequ
 		return h.errorResponse(http.StatusBadRequest, "password is required"), nil
 	}
 
-	// 3) Execute login use case
 	output, err := h.authUseCase.Login(ctx, input)
 	if err != nil {
 		return h.errorResponse(http.StatusUnauthorized, err.Error()), nil
@@ -51,9 +63,80 @@ func (h *AuthHandler) Handle(ctx context.Context, req events.APIGatewayProxyRequ
 	return events.APIGatewayProxyResponse{
 		StatusCode: http.StatusOK,
 		Body:       string(body),
-		Headers: map[string]string{
-			"Content-Type": "application/json",
-		},
+		Headers:    map[string]string{"Content-Type": "application/json"},
+	}, nil
+}
+
+func (h *AuthHandler) handleValidate(ctx context.Context, req events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
+	authHeader := req.Headers["Authorization"]
+	if authHeader == "" {
+		authHeader = req.Headers["authorization"]
+	}
+
+	const bearerPrefix = "Bearer "
+	if len(authHeader) <= len(bearerPrefix) {
+		return h.errorResponse(http.StatusUnauthorized, "missing or invalid Authorization header"), nil
+	}
+	tokenString := authHeader[len(bearerPrefix):]
+
+	valid, err := h.authUseCase.Validate(ctx, tokenString)
+	if err != nil || !valid {
+		return h.errorResponse(http.StatusUnauthorized, "invalid or expired token"), nil
+	}
+
+	body, _ := json.Marshal(map[string]bool{"valid": true})
+	return events.APIGatewayProxyResponse{
+		StatusCode: http.StatusOK,
+		Body:       string(body),
+		Headers:    map[string]string{"Content-Type": "application/json"},
+	}, nil
+}
+
+func (h *AuthHandler) handleRefresh(ctx context.Context, req events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
+	var input ports.RefreshInput
+
+	if err := json.Unmarshal([]byte(req.Body), &input); err != nil {
+		return h.errorResponse(http.StatusBadRequest, "invalid request body"), nil
+	}
+	if input.RefreshToken == "" {
+		return h.errorResponse(http.StatusBadRequest, "refresh_token is required"), nil
+	}
+
+	output, err := h.authUseCase.Refresh(ctx, input)
+	if err != nil {
+		return h.errorResponse(http.StatusUnauthorized, err.Error()), nil
+	}
+
+	body, err := json.Marshal(output)
+	if err != nil {
+		return h.errorResponse(http.StatusInternalServerError, "failed to serialize response"), nil
+	}
+
+	return events.APIGatewayProxyResponse{
+		StatusCode: http.StatusOK,
+		Body:       string(body),
+		Headers:    map[string]string{"Content-Type": "application/json"},
+	}, nil
+}
+
+func (h *AuthHandler) handleLogout(ctx context.Context, req events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
+	authHeader := req.Headers["Authorization"]
+	if authHeader == "" {
+		authHeader = req.Headers["authorization"]
+	}
+
+	const bearerPrefix = "Bearer "
+	if len(authHeader) <= len(bearerPrefix) {
+		return h.errorResponse(http.StatusUnauthorized, "missing or invalid Authorization header"), nil
+	}
+	tokenString := authHeader[len(bearerPrefix):]
+
+	if err := h.authUseCase.Logout(ctx, tokenString); err != nil {
+		return h.errorResponse(http.StatusUnauthorized, err.Error()), nil
+	}
+
+	return events.APIGatewayProxyResponse{
+		StatusCode: http.StatusNoContent,
 	}, nil
 }
 
