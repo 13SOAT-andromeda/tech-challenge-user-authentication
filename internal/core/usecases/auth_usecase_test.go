@@ -9,8 +9,6 @@ import (
 	"tech-challenge-user-validation/internal/core/domain"
 	"tech-challenge-user-validation/internal/core/ports"
 
-	"github.com/golang-jwt/jwt/v5"
-	"github.com/google/uuid"
 )
 
 type mockHasher struct{}
@@ -296,49 +294,3 @@ func TestAuthUseCase_Login(t *testing.T) {
 	})
 }
 
-func TestAuthUseCase_Validate(t *testing.T) {
-	ctx := context.Background()
-	secret := "secret"
-	jti := uuid.New().String()
-
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"jti": jti,
-		"exp": time.Now().Add(time.Hour).Unix(),
-	})
-	tokenString, _ := token.SignedString([]byte(secret))
-
-	t.Run("should succeed if token is valid and session exists", func(t *testing.T) {
-		sessionSvc := &mockSessionService{
-			getFunc: func(ctx context.Context, sessionID string) (*ports.Session, error) {
-				if sessionID == jti {
-					return &ports.Session{ID: jti}, nil
-				}
-				return nil, nil
-			},
-		}
-		uc := NewAuthUseCase(nil, nil, sessionSvc, &mockJWTService{}, secret)
-		valid, err := uc.Validate(ctx, tokenString)
-		if err != nil {
-			t.Fatalf("unexpected error: %v", err)
-		}
-		if !valid {
-			t.Fatal("expected token to be valid")
-		}
-	})
-
-	t.Run("should fail if session does not exist", func(t *testing.T) {
-		sessionSvc := &mockSessionService{
-			getFunc: func(ctx context.Context, sessionID string) (*ports.Session, error) {
-				return nil, nil
-			},
-		}
-		uc := NewAuthUseCase(nil, nil, sessionSvc, &mockJWTService{}, secret)
-		valid, err := uc.Validate(ctx, tokenString)
-		if err == nil || err.Error() != "session not found or revoked" {
-			t.Fatalf("expected 'session not found or revoked' error, got: %v", err)
-		}
-		if valid {
-			t.Fatal("expected token to be invalid")
-		}
-	})
-}

@@ -25,8 +25,6 @@ func (h *AuthHandler) Handle(ctx context.Context, req events.APIGatewayProxyRequ
 	switch {
 	case req.HTTPMethod == http.MethodPost && req.Path == "/sessions":
 		return h.handleLogin(ctx, req)
-	case req.HTTPMethod == http.MethodGet && req.Path == "/sessions/validate":
-		return h.handleValidate(ctx, req)
 	case req.HTTPMethod == http.MethodPost && req.Path == "/sessions/refresh":
 		return h.handleRefresh(ctx, req)
 	case req.HTTPMethod == http.MethodDelete && req.Path == "/sessions/logout":
@@ -60,31 +58,6 @@ func (h *AuthHandler) handleLogin(ctx context.Context, req events.APIGatewayProx
 		return h.errorResponse(http.StatusInternalServerError, "failed to serialize response"), nil
 	}
 
-	return events.APIGatewayProxyResponse{
-		StatusCode: http.StatusOK,
-		Body:       string(body),
-		Headers:    map[string]string{"Content-Type": "application/json"},
-	}, nil
-}
-
-func (h *AuthHandler) handleValidate(ctx context.Context, req events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
-	authHeader := req.Headers["Authorization"]
-	if authHeader == "" {
-		authHeader = req.Headers["authorization"]
-	}
-
-	const bearerPrefix = "Bearer "
-	if len(authHeader) <= len(bearerPrefix) {
-		return h.errorResponse(http.StatusUnauthorized, "missing or invalid Authorization header"), nil
-	}
-	tokenString := authHeader[len(bearerPrefix):]
-
-	valid, err := h.authUseCase.Validate(ctx, tokenString)
-	if err != nil || !valid {
-		return h.errorResponse(http.StatusUnauthorized, "invalid or expired token"), nil
-	}
-
-	body, _ := json.Marshal(map[string]bool{"valid": true})
 	return events.APIGatewayProxyResponse{
 		StatusCode: http.StatusOK,
 		Body:       string(body),

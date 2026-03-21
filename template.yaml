@@ -36,11 +36,6 @@ Resources:
           Properties:
             Path: /sessions
             Method: post
-        ValidateSession:
-          Type: Api
-          Properties:
-            Path: /sessions/validate
-            Method: get
         RefreshSession:
           Type: Api
           Properties:

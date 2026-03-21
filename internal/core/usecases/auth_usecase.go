@@ -8,8 +8,6 @@ import (
 	"time"
 
 	"tech-challenge-user-validation/internal/core/ports"
-
-	"github.com/golang-jwt/jwt/v5"
 )
 
 type AuthUseCase struct {
@@ -17,7 +15,6 @@ type AuthUseCase struct {
 	tokenRepo      ports.TokenRepository
 	sessionService ports.SessionService
 	jwtService     ports.JWTService
-	jwtSecret      []byte
 }
 
 func NewAuthUseCase(
@@ -32,7 +29,6 @@ func NewAuthUseCase(
 		tokenRepo:      tokenRepo,
 		sessionService: sessionService,
 		jwtService:     jwtService,
-		jwtSecret:      []byte(secret),
 	}
 }
 
@@ -142,31 +138,3 @@ func (uc *AuthUseCase) Logout(ctx context.Context, tokenString string) error {
 	return uc.sessionService.Delete(ctx, sessionID)
 }
 
-func (uc *AuthUseCase) Validate(ctx context.Context, tokenString string) (bool, error) {
-	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-		return uc.jwtSecret, nil
-	})
-	if err != nil || !token.Valid {
-		return false, errors.New("invalid token")
-	}
-
-	mapClaims, ok := token.Claims.(jwt.MapClaims)
-	if !ok {
-		return false, errors.New("invalid token claims")
-	}
-
-	jti, ok := mapClaims["jti"].(string)
-	if !ok || jti == "" {
-		return false, errors.New("invalid token: missing jti")
-	}
-
-	session, err := uc.sessionService.GetByID(ctx, jti)
-	if err != nil {
-		return false, err
-	}
-	if session == nil {
-		return false, errors.New("session not found or revoked")
-	}
-
-	return true, nil
-}
