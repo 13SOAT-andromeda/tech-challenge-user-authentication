@@ -54,7 +54,7 @@ func (uc *AuthUseCase) Login(ctx context.Context, input ports.LoginInput) (*port
 		return nil, errors.New("user not found")
 	}
 
-	if err := user.Password.Compare(input.Password); err != nil || user.DeletedAt != nil || !user.IsActive {
+	if err := user.Password.Compare(input.Password); err != nil || user.DeletedAt != nil || user.Person == nil || !user.Person.IsActive {
 		return nil, errors.New("invalid credentials")
 	}
 
@@ -78,7 +78,7 @@ func (uc *AuthUseCase) Login(ctx context.Context, input ports.LoginInput) (*port
 		return nil, err
 	}
 
-	accessToken, err := uc.jwtService.GenerateAccessToken(user.ID, user.Email, user.Role, session.ID)
+	accessToken, err := uc.jwtService.GenerateAccessToken(user.ID, user.Person.Email, user.Role, session.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -109,7 +109,7 @@ func (uc *AuthUseCase) Refresh(ctx context.Context, input ports.RefreshInput) (*
 		return nil, errors.New("user not found")
 	}
 
-	accessToken, err := uc.jwtService.GenerateAccessToken(user.ID, user.Email, user.Role, session.ID)
+	accessToken, err := uc.jwtService.GenerateAccessToken(user.ID, user.Person.Email, user.Role, session.ID)
 	if err != nil {
 		return nil, err
 	}

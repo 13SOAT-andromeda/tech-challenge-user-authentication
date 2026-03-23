@@ -146,15 +146,19 @@ func (m *mockJWTService) RefreshAccessToken(refreshTokenString, email, role, ses
 }
 
 func makeUser(document, rawPassword string, active bool) *domain.User {
+	pass := domain.NewPasswordFromHash(rawPassword, &mockHasher{})
 	return &domain.User{
 		ID:       1,
-		Name:     "Barbara",
-		Email:    "barbara@exemplo.com",
-		Contact:  "11999999999",
 		Role:     "user",
-		Document: document,
-		IsActive: active,
-		Password: domain.NewPasswordFromHash(rawPassword, &mockHasher{}),
+		PersonID: 1,
+		Person: &domain.Person{
+			Name:     "Barbara",
+			Email:    "barbara@exemplo.com",
+			Contact:  "11999999999",
+			Document: document,
+			IsActive: active,
+		},
+		Password: &pass,
 	}
 }
 
@@ -200,8 +204,8 @@ func TestAuthUseCase_Login(t *testing.T) {
 			Document: "123.456.789-00",
 			Password: "123456",
 		})
-		if err == nil || err.Error() != "user not found" {
-			t.Fatalf("expected 'user not found' for inactive user, got: %v", err)
+		if err == nil || err.Error() != "invalid credentials" {
+			t.Fatalf("expected 'invalid credentials' for inactive user, got: %v", err)
 		}
 	})
 
@@ -216,8 +220,8 @@ func TestAuthUseCase_Login(t *testing.T) {
 			Document: "123.456.789-00",
 			Password: "wrong-password",
 		})
-		if err == nil || err.Error() != "user not found" {
-			t.Fatalf("expected 'user not found' for invalid password, got: %v", err)
+		if err == nil || err.Error() != "invalid credentials" {
+			t.Fatalf("expected 'invalid credentials' for invalid password, got: %v", err)
 		}
 	})
 

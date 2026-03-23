@@ -8,7 +8,7 @@ import (
 	services "tech-challenge-user-validation/internal/service"
 	"time"
 
-	"tech-challenge-user-validation/internal/adapters/database/model/address"
+	personModel "tech-challenge-user-validation/internal/adapters/database/model/person"
 	"tech-challenge-user-validation/internal/adapters/database/model/user"
 	"tech-challenge-user-validation/internal/adapters/database/repositories"
 	"tech-challenge-user-validation/internal/adapters/handlers"
@@ -49,7 +49,7 @@ func main() {
 		log.Fatalf("failed to connect to postgres: %v", err)
 	}
 
-	err = db.AutoMigrate(&user.Model{}, &address.Model{})
+	err = db.AutoMigrate(&personModel.Model{}, &user.Model{})
 	if err != nil {
 		log.Printf("failed to auto migrate models: %v", err)
 	}

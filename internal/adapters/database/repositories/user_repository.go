@@ -22,7 +22,7 @@ func NewUserRepository(db *gorm.DB) ports.UserRepository {
 
 func (u *userRepository) GetByDocument(ctx context.Context, document string) (*domain.User, error) {
 	model := user.Model{}
-	err := u.db.Where("document = ?", document).First(&model).Error
+	err := u.db.Joins("Person").Where("\"Person\".document = ?", document).First(&model).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, nil
@@ -34,7 +34,7 @@ func (u *userRepository) GetByDocument(ctx context.Context, document string) (*d
 
 func (u *userRepository) GetByID(ctx context.Context, id uint) (*domain.User, error) {
 	model := user.Model{}
-	err := u.db.First(&model, id).Error
+	err := u.db.Preload("Person").First(&model, id).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, nil

@@ -28,16 +28,20 @@ func (h *plainHasher) Compare(hashedPassword, password string) error {
 type mockUserRepository struct{}
 
 func (m *mockUserRepository) GetByDocument(ctx context.Context, document string) (*domain.User, error) {
-	if document == "123.456.789-00" {
+	if document == "12345678900" {
+		pass := domain.NewPasswordFromHash("123456", &plainHasher{})
 		return &domain.User{
 			ID:       1,
-			Name:     "Barbara",
-			Email:    "barbara@exemplo.com",
-			Contact:  "11999999999",
 			Role:     "user",
-			Document: document,
-			IsActive: true,
-			Password: domain.NewPasswordFromHash("123456", &plainHasher{}),
+			PersonID: 1,
+			Person: &domain.Person{
+				Name:     "Barbara",
+				Email:    "barbara@exemplo.com",
+				Contact:  "11999999999",
+				Document: document,
+				IsActive: true,
+			},
+			Password: &pass,
 		}, nil
 	}
 	return nil, nil
