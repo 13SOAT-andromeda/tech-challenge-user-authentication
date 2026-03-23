@@ -279,12 +279,6 @@ func TestAuthUseCase_Login(t *testing.T) {
 		if out.RefreshToken == "" {
 			t.Fatal("expected refresh token")
 		}
-		if out.JTI == "" {
-			t.Fatal("expected jti")
-		}
-		if out.JTI != expectedJTI {
-			t.Fatalf("expected jti %s, got %s", expectedJTI, out.JTI)
-		}
 		if capturedSessionID != expectedJTI {
 			t.Fatalf("expected session create with jti %s, got %s", expectedJTI, capturedSessionID)
 		}

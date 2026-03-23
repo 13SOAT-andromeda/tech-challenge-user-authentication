@@ -3,6 +3,7 @@ package usecases
 import (
 	"context"
 	"errors"
+	"fmt"
 	"regexp"
 	"strconv"
 	"time"
@@ -32,20 +33,29 @@ func NewAuthUseCase(
 	}
 }
 
-var DocumentRegex = regexp.MustCompile(`^\d{3}\.\d{3}\.\d{3}-\d{2}$`)
+var DocumentRegex = regexp.MustCompile(`^\d{11}$`)
+var nonDigit = regexp.MustCompile(`\D`)
+
+func normalizeDocument(doc string) string {
+	return nonDigit.ReplaceAllString(doc, "")
+}
 
 func (uc *AuthUseCase) Login(ctx context.Context, input ports.LoginInput) (*ports.LoginOutput, error) {
+	input.Document = normalizeDocument(input.Document)
 	if !DocumentRegex.MatchString(input.Document) {
 		return nil, errors.New("invalid document format")
 	}
 
 	user, err := uc.userRepo.GetByDocument(ctx, input.Document)
-	if err != nil || user == nil {
+	if err != nil {
+		return nil, fmt.Errorf("database error: %w", err)
+	}
+	if user == nil {
 		return nil, errors.New("user not found")
 	}
 
 	if err := user.Password.Compare(input.Password); err != nil || user.DeletedAt != nil || !user.IsActive {
-		return nil, errors.New("user not found")
+		return nil, errors.New("invalid credentials")
 	}
 
 	refreshToken, err := uc.jwtService.GenerateRefreshToken(user.ID)
@@ -73,22 +83,9 @@ func (uc *AuthUseCase) Login(ctx context.Context, input ports.LoginInput) (*port
 		return nil, err
 	}
 
-	accessExpiry := 1 * time.Hour
-
-	userOutput := ports.UserOutput{
-		ID:      user.ID,
-		Name:    user.Name,
-		Email:   user.Email,
-		Contact: user.Contact,
-		Role:    user.Role,
-	}
-
 	return &ports.LoginOutput{
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
-		ExpiresIn:    int64(accessExpiry.Seconds()),
-		JTI:          jti,
-		User:         userOutput,
 	}, nil
 }
 
@@ -137,4 +134,3 @@ func (uc *AuthUseCase) Logout(ctx context.Context, tokenString string) error {
 
 	return uc.sessionService.Delete(ctx, sessionID)
 }
-

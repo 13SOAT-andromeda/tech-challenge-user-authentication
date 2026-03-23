@@ -178,8 +178,12 @@ redeploy: zip
 .PHONY: seed
 seed:
 	@echo "Seeding database..."
-	docker exec -i localstack-postgres psql -U $(DB_USER) -d $(DB_NAME) < scripts/seed.sql
-	@echo "Seed complete. User: 123.456.789-00 / Admin123!"
+	docker exec -i localstack-postgres psql -U $(DB_USER) -d $(DB_NAME) -v ON_ERROR_STOP=1 < scripts/seed.sql
+	@echo "Seed complete. Password for all users: Admin123!"
+	@echo "  customer@example.com      (document: 11122233344)"
+	@echo "  attendant@example.com     (document: 22233344455)"
+	@echo "  mechanic@example.com      (document: 33344455566)"
+	@echo "  administrator@example.com (document: 44455566677)"
 
 # ─── Test ──────────────────────────────────────────────────────────────────────
 .PHONY: curl
@@ -228,6 +232,17 @@ sessions-flush:
 			echo "Deleted: $$id"; \
 		done
 	@echo "Done."
+
+# ─── SAM Local ─────────────────────────────────────────────────────────────────
+SAM_PORT ?= 8081
+
+.PHONY: sam
+sam:
+	sam build
+	sam local start-api \
+		--port $(SAM_PORT) \
+		--docker-network local-net \
+		--warm-containers EAGER
 
 # ─── Shortcuts ─────────────────────────────────────────────────────────────────
 .PHONY: local

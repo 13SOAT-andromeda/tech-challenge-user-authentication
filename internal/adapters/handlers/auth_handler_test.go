@@ -163,8 +163,5 @@ func TestAuthHandler_Handle(t *testing.T) {
 		if body.RefreshToken == "" {
 			t.Error("expected refresh_token in response body")
 		}
-		if body.JTI == "" {
-			t.Error("expected jti in response body")
-		}
 	})
 }

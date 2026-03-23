@@ -10,7 +10,7 @@ Globals:
     Timeout: 30
     Environment:
       Variables:
-        JWT_SECRET: local-dev-secret
+        JWT_SECRET: 5b9b178c235820c6e69fbf54876bc4df3ffb4f3ab5ec87305b8b42d2481358c3
         JWT_REFRESH_SECRET: local-dev-refresh-secret
         DB_HOST: localstack-postgres
         DB_USER: postgres
@@ -46,5 +46,10 @@ Resources:
           Properties:
             Path: /sessions/logout
             Method: delete
+        CatchAll:
+          Type: Api
+          Properties:
+            Path: /{proxy+}
+            Method: any
     Metadata:
       BuildMethod: go1.x
