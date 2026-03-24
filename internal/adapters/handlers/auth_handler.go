@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"strings"
 
 	"tech-challenge-user-validation/internal/core/ports"
 	"tech-challenge-user-validation/internal/core/usecases"
@@ -26,11 +27,11 @@ func (h *AuthHandler) Handle(ctx context.Context, req events.APIGatewayV2HTTPReq
 	path := req.RawPath
 
 	switch {
-	case method == http.MethodPost && path == "/sessions":
-		return h.handleLogin(ctx, req)
-	case method == http.MethodPost && path == "/sessions/refresh":
+	case method == http.MethodPost && strings.Contains(path, "/sessions/refresh"):
 		return h.handleRefresh(ctx, req)
-	case method == http.MethodDelete && path == "/sessions/logout":
+	case method == http.MethodPost && strings.Contains(path, "/sessions"):
+		return h.handleLogin(ctx, req)
+	case method == http.MethodDelete && strings.Contains(path, "/sessions/logout"):
 		return h.handleLogout(ctx, req)
 	default:
 		return h.errorResponse(http.StatusNotFound, "route not found"), nil
