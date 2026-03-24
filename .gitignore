@@ -53,3 +53,5 @@ Thumbs.db
 
 # Gemini
 .gemini
+.localstack/cache
+.aws-sam/
