@@ -50,11 +50,6 @@ resource "aws_lambda_function" "this" {
   }
 }
 
-import {
-  to = aws_lambda_function_url.this
-  id = "tech-challenge-user-authentication"
-}
-
 resource "aws_lambda_function_url" "this" {
   function_name      = aws_lambda_function.this.function_name
   authorization_type = "NONE"
