@@ -9,6 +9,7 @@ import (
 	"tech-challenge-user-validation/internal/core/ports"
 	"tech-challenge-user-validation/internal/core/usecases"
 
+	"github.com/DataDog/dd-trace-go/v2/ddtrace/tracer"
 	"github.com/aws/aws-lambda-go/events"
 )
 
@@ -26,16 +27,38 @@ func (h *AuthHandler) Handle(ctx context.Context, req events.APIGatewayV2HTTPReq
 	method := req.RequestContext.HTTP.Method
 	path := req.RawPath
 
+	span, ctx := tracer.StartSpanFromContext(ctx, "http.request",
+		tracer.Tag("http.method", method),
+		tracer.Tag("http.url", path),
+	)
+	defer span.Finish()
+
+	var (
+		resp  events.APIGatewayV2HTTPResponse
+		err   error
+		route string
+	)
+
 	switch {
 	case method == http.MethodPost && strings.Contains(path, "/sessions/refresh"):
-		return h.handleRefresh(ctx, req)
+		route = "POST /sessions/refresh"
+		resp, err = h.handleRefresh(ctx, req)
 	case method == http.MethodPost && strings.Contains(path, "/sessions"):
-		return h.handleLogin(ctx, req)
+		route = "POST /sessions"
+		resp, err = h.handleLogin(ctx, req)
 	case method == http.MethodDelete && strings.Contains(path, "/sessions/logout"):
-		return h.handleLogout(ctx, req)
+		route = "DELETE /sessions/logout"
+		resp, err = h.handleLogout(ctx, req)
 	default:
-		return h.errorResponse(http.StatusNotFound, "route not found"), nil
+		route = "unknown"
+		resp = h.errorResponse(http.StatusNotFound, "route not found")
 	}
+
+	span.SetTag("http.route", route)
+	span.SetTag("resource.name", route)
+	span.SetTag("http.status_code", resp.StatusCode)
+
+	return resp, err
 }
 
 func (h *AuthHandler) handleLogin(ctx context.Context, req events.APIGatewayV2HTTPRequest) (events.APIGatewayV2HTTPResponse, error) {
