@@ -39,9 +39,16 @@ resource "aws_lambda_function" "this" {
 
   environment {
     variables = {
-      DB_HOST        = var.db_host
-      DYNAMODB_TABLE = var.dynamodb_table_name
-      PROJECT_ENV    = var.project_env
+      JWT_SECRET          = var.jwt_secret
+      JWT_REFRESH_SECRET  = var.jwt_refresh_secret
+      DB_HOST             = var.db_host
+      DB_USER             = var.db_user
+      DB_PASSWORD         = var.db_password
+      DB_NAME             = var.db_name
+      DB_PORT             = var.db_port
+      DB_SSLMODE          = var.db_sslmode
+      DYNAMODB_TABLE_NAME = var.dynamodb_table_name
+      PROJECT_ENV         = var.project_env
     }
   }
 
@@ -62,3 +69,4 @@ resource "aws_lambda_permission" "allow_public_url" {
   principal              = "*"
   function_url_auth_type = "NONE"
 }
+
