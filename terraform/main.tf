@@ -27,7 +27,7 @@ data "aws_iam_role" "lab_role" {
 }
 
 resource "aws_lambda_function" "this" {
-  function_name = "tech-challenge-user-validation"
+  function_name = "tech-challenge-user-authentication"
   role          = data.aws_iam_role.lab_role.arn
   package_type  = "Image"
   image_uri     = "${data.aws_ecr_repository.this.repository_url}:${var.image_tag}"
@@ -48,6 +48,11 @@ resource "aws_lambda_function" "this" {
   image_config {
     command = ["bootstrap"]
   }
+}
+
+import {
+  to = aws_lambda_function_url.this
+  id = "tech-challenge-user-authentication"
 }
 
 resource "aws_lambda_function_url" "this" {
