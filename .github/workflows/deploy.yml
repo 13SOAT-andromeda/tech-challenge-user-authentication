@@ -77,15 +77,15 @@ jobs:
             -backend-config="region=${{ secrets.AWS_REGION }}"
 
       - name: Terraform Apply
-        run: |
-          terraform apply -auto-approve \
-            -var="image_tag=${{ github.sha }}" \
-            -var="jwt_secret=${{ secrets.JWT_SECRET }}" \
-            -var="jwt_refresh_secret=${{ secrets.JWT_REFRESH_SECRET }}" \
-            -var="db_host=${{ env.DB_HOST }}" \
-            -var="db_user=${{ secrets.DB_USER }}" \
-            -var="db_password=${{ secrets.AWS_RDS_DB_PASSWORD }}" \
-            -var="db_name=${{ secrets.DB_NAME }}" \
-            -var="db_port=${{ secrets.DB_PORT }}" \
-            -var="db_sslmode=${{ secrets.DB_SSLMODE }}" \
-            -var="dynamodb_table_name=${{ secrets.DYNAMO_AUTH_TABLE }}"
+        env:
+          TF_VAR_image_tag: ${{ github.sha }}
+          TF_VAR_jwt_secret: ${{ secrets.JWT_SECRET }}
+          TF_VAR_jwt_refresh_secret: ${{ secrets.JWT_REFRESH_SECRET }}
+          TF_VAR_db_host: ${{ env.DB_HOST }}
+          TF_VAR_db_user: ${{ secrets.DB_USER }}
+          TF_VAR_db_password: ${{ secrets.AWS_RDS_DB_PASSWORD }}
+          TF_VAR_db_name: ${{ secrets.DB_NAME }}
+          TF_VAR_db_port: ${{ secrets.DB_PORT }}
+          TF_VAR_db_sslmode: ${{ secrets.DB_SSLMODE }}
+          TF_VAR_dynamodb_table_name: ${{ secrets.DYNAMO_AUTH_TABLE }}
+        run: terraform apply -auto-approve
