@@ -96,4 +96,5 @@ jobs:
           TF_VAR_db_sslmode: ${{ secrets.DB_SSLMODE }}
           TF_VAR_dynamodb_table_name: ${{ secrets.DYNAMO_AUTH_TABLE }}
           TF_VAR_dynamodb_endpoint: ${{ env.DYNAMODB_ENDPOINT }}
+          TF_VAR_dd_key: ${{ secrets.DD_API_KEY }}
         run: terraform apply -auto-approve

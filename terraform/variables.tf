@@ -71,3 +71,9 @@ variable "db_sslmode" {
   type        = string
   default     = "require"
 }
+
+variable "dd_key" {
+  description = "Datadog API Key"
+  type        = string
+  sensitive   = true
+}

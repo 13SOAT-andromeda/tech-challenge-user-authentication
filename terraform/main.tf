@@ -49,6 +49,8 @@ resource "aws_lambda_function" "this" {
       DB_SSLMODE          = var.db_sslmode
       DYNAMODB_TABLE_NAME = var.dynamodb_table_name
       DYNAMODB_ENDPOINT   = var.dynamodb_endpoint
+      DD_API_KEY          = var.dd_key
+      DD_SITE             = "us5.datadoghq.com"
       PROJECT_ENV         = var.project_env
     }
   }
