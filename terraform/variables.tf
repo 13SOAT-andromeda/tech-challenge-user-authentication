@@ -20,12 +20,6 @@ variable "dynamodb_endpoint" {
   type        = string
 }
 
-variable "project_env" {
-  description = "Project environment"
-  type        = string
-  default     = "dev"
-}
-
 variable "image_tag" {
   description = "ECR image tag"
   type        = string
