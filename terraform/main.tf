@@ -19,7 +19,7 @@ provider "aws" {
 }
 
 data "aws_ecr_repository" "this" {
-  name = "tech-challenge-user-validation-repo"
+  name = "tech-challenge-user-authentication-repo"
 }
 
 data "aws_iam_role" "lab_role" {
@@ -33,7 +33,7 @@ resource "aws_lambda_function" "this" {
   image_uri     = "${data.aws_ecr_repository.this.repository_url}:${var.image_tag}"
 
   reserved_concurrent_executions = 3
-  
+
   timeout     = 30
   memory_size = 128
 
