@@ -178,8 +178,12 @@ redeploy: zip
 .PHONY: seed
 seed:
 	@echo "Seeding database..."
-	docker exec -i localstack-postgres psql -U $(DB_USER) -d $(DB_NAME) < scripts/seed.sql
-	@echo "Seed complete. User: 123.456.789-00 / Admin123!"
+	docker exec -i localstack-postgres psql -U $(DB_USER) -d $(DB_NAME) -v ON_ERROR_STOP=1 < scripts/seed.sql
+	@echo "Seed complete. Password for all users: Admin123!"
+	@echo "  customer@example.com      (document: 11122233344)"
+	@echo "  attendant@example.com     (document: 22233344455)"
+	@echo "  mechanic@example.com      (document: 33344455566)"
+	@echo "  administrator@example.com (document: 44455566677)"
 
 # ─── Test ──────────────────────────────────────────────────────────────────────
 .PHONY: curl
@@ -206,6 +210,39 @@ logs:
 	$(AWSLOCAL) lambda get-function \
 		--function-name $(FUNCTION_NAME) \
 		--region $(REGION)
+
+.PHONY: sessions
+sessions:
+	$(AWSLOCAL) dynamodb scan \
+		--table-name $(DYNAMO_TABLE) \
+		--region $(REGION)
+
+.PHONY: sessions-flush
+sessions-flush:
+	@echo "Flushing all sessions from $(DYNAMO_TABLE)..."
+	@$(AWSLOCAL) dynamodb scan \
+		--table-name $(DYNAMO_TABLE) \
+		--region $(REGION) \
+		--query 'Items[*].token_id.S' \
+		--output text | tr '\t' '\n' | while read id; do \
+			$(AWSLOCAL) dynamodb delete-item \
+				--table-name $(DYNAMO_TABLE) \
+				--key "{\"token_id\":{\"S\":\"$$id\"}}" \
+				--region $(REGION); \
+			echo "Deleted: $$id"; \
+		done
+	@echo "Done."
+
+# ─── SAM Local ─────────────────────────────────────────────────────────────────
+SAM_PORT ?= 8081
+
+.PHONY: sam
+sam:
+	sam build
+	sam local start-api \
+		--port $(SAM_PORT) \
+		--docker-network local-net \
+		--warm-containers EAGER
 
 # ─── Shortcuts ─────────────────────────────────────────────────────────────────
 .PHONY: local
@@ -235,6 +272,8 @@ help:
 	@echo "  make curl             POST /sessions via API Gateway"
 	@echo "  make invoke           Direct Lambda invoke (no API Gateway)"
 	@echo "  make logs             Show function metadata"
+	@echo "  make sessions         List all sessions in DynamoDB"
+	@echo "  make sessions-flush   Delete all sessions from DynamoDB"
 	@echo "  make clean            Remove build artifacts"
 	@echo "  make test             Run all tests"
 	@echo ""

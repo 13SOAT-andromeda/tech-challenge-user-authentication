@@ -11,4 +11,5 @@ type Session struct {
 type SessionService interface {
 	Create(ctx context.Context, sessionID string, userID string, expiresAt int64) (*Session, error)
 	GetByID(ctx context.Context, sessionID string) (*Session, error)
+	Delete(ctx context.Context, sessionID string) error
 }

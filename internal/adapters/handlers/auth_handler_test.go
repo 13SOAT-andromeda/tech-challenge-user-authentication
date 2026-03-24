@@ -28,18 +28,26 @@ func (h *plainHasher) Compare(hashedPassword, password string) error {
 type mockUserRepository struct{}
 
 func (m *mockUserRepository) GetByDocument(ctx context.Context, document string) (*domain.User, error) {
-	if document == "123.456.789-00" {
+	if document == "12345678900" {
+		pass := domain.NewPasswordFromHash("123456", &plainHasher{})
 		return &domain.User{
 			ID:       1,
-			Name:     "Barbara",
-			Email:    "barbara@exemplo.com",
-			Contact:  "11999999999",
 			Role:     "user",
-			Document: document,
-			IsActive: true,
-			Password: domain.NewPasswordFromHash("123456", &plainHasher{}),
+			PersonID: 1,
+			Person: &domain.Person{
+				Name:     "Barbara",
+				Email:    "barbara@exemplo.com",
+				Contact:  "11999999999",
+				Document: document,
+				IsActive: true,
+			},
+			Password: &pass,
 		}, nil
 	}
+	return nil, nil
+}
+
+func (m *mockUserRepository) GetByID(ctx context.Context, id uint) (*domain.User, error) {
 	return nil, nil
 }
 
@@ -60,6 +68,10 @@ func (m *mockSessionService) GetByID(ctx context.Context, sessionID string) (*po
 	return nil, nil
 }
 
+func (m *mockSessionService) Delete(ctx context.Context, sessionID string) error {
+	return nil
+}
+
 type mockJWTService struct{}
 
 func (m *mockJWTService) GenerateAccessToken(userID uint, email, role, sessionID string) (string, error) {
@@ -71,6 +83,17 @@ func (m *mockJWTService) GenerateRefreshToken(userID uint) (string, error) {
 }
 
 func (m *mockJWTService) ValidateToken(tokenString string) (*ports.JWTClaims, error) {
+	return &ports.JWTClaims{
+		UserID:    1,
+		JTI:       "jti-123",
+		Email:     "barbara@exemplo.com",
+		Role:      "user",
+		SessionID: "jti-123",
+		ExpiresAt: time.Now().Add(24 * time.Hour),
+	}, nil
+}
+
+func (m *mockJWTService) ValidateRefreshToken(tokenString string) (*ports.JWTClaims, error) {
 	return &ports.JWTClaims{
 		UserID:    1,
 		JTI:       "jti-123",
@@ -104,7 +127,11 @@ func TestAuthHandler_Handle(t *testing.T) {
 	h := NewAuthHandler(uc)
 
 	t.Run("should return 400 if request body is invalid", func(t *testing.T) {
-		req := events.APIGatewayProxyRequest{Body: ""}
+		req := events.APIGatewayProxyRequest{
+			HTTPMethod: http.MethodPost,
+			Path:       "/sessions",
+			Body:       "",
+		}
 		resp, err := h.Handle(ctx, req)
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
@@ -116,7 +143,9 @@ func TestAuthHandler_Handle(t *testing.T) {
 
 	t.Run("should return 200 and access_token/refresh_token/jti", func(t *testing.T) {
 		req := events.APIGatewayProxyRequest{
-			Body: `{"document":"123.456.789-00","password":"123456"}`,
+			HTTPMethod: http.MethodPost,
+			Path:       "/sessions",
+			Body:       `{"document":"123.456.789-00","password":"123456"}`,
 		}
 
 		resp, err := h.Handle(ctx, req)
@@ -137,9 +166,6 @@ func TestAuthHandler_Handle(t *testing.T) {
 		}
 		if body.RefreshToken == "" {
 			t.Error("expected refresh_token in response body")
-		}
-		if body.JTI == "" {
-			t.Error("expected jti in response body")
 		}
 	})
 }

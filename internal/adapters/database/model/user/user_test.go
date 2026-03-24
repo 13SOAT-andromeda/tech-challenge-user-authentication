@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"tech-challenge-user-validation/internal/adapters/database/model/address"
+	personModel "tech-challenge-user-validation/internal/adapters/database/model/person"
 	"tech-challenge-user-validation/internal/core/domain"
 	"github.com/stretchr/testify/assert"
 	"gorm.io/gorm"
@@ -18,15 +18,13 @@ func TestUserModel_ToDomain(t *testing.T) {
 			CreatedAt: now,
 			UpdatedAt: now,
 		},
-		Name:     "John Doe",
-		Email:    "john@example.com",
-		Contact:  "123456789",
-		Document: "123.456.789-00",
-		IsActive: true,
 		Password: "hashed_password",
 		Role:     "user",
-		Address: &address.Model{
-			Street: "Main St",
+		PersonID: 2,
+		Person: personModel.Model{
+			Model: gorm.Model{ID: 2},
+			Name:  "John Doe",
+			Email: "john@example.com",
 		},
 	}
 
@@ -34,54 +32,49 @@ func TestUserModel_ToDomain(t *testing.T) {
 
 	assert.NotNil(t, domainUser)
 	assert.Equal(t, uint(1), domainUser.ID)
-	assert.Equal(t, "John Doe", domainUser.Name)
-	assert.Equal(t, "john@example.com", domainUser.Email)
-	assert.Equal(t, "123456789", domainUser.Contact)
-	assert.Equal(t, "123.456.789-00", domainUser.Document)
-	assert.True(t, domainUser.IsActive)
 	assert.Equal(t, "user", domainUser.Role)
+	assert.Equal(t, uint(2), domainUser.PersonID)
+	assert.NotNil(t, domainUser.Password)
 	assert.Equal(t, "hashed_password", domainUser.Password.GetHashed())
-	assert.NotNil(t, domainUser.Address)
-	assert.Equal(t, "Main St", domainUser.Address.Street)
+	assert.NotNil(t, domainUser.Person)
+	assert.Equal(t, "John Doe", domainUser.Person.Name)
+	assert.Equal(t, "john@example.com", domainUser.Person.Email)
 	assert.Equal(t, now, domainUser.CreatedAt)
 	assert.Nil(t, domainUser.DeletedAt)
 }
 
 func TestUserModel_FromDomain(t *testing.T) {
 	now := time.Now()
+	pass := domain.NewPasswordFromHash("hashed_password", nil)
 	domainUser := &domain.User{
-		ID:        1,
-		Name:      "John Doe",
-		Email:     "john@example.com",
-		Contact:   "123456789",
-		Document:  "123.456.789-00",
-		IsActive:  true,
-		Role:      "user",
-		Address: &domain.Address{
-			Street: "Main St",
+		ID:       1,
+		Role:     "user",
+		PersonID: 2,
+		Person: &domain.Person{
+			ID:    2,
+			Name:  "John Doe",
+			Email: "john@example.com",
 		},
+		Password:  &pass,
 		CreatedAt: now,
 		UpdatedAt: now,
 	}
 
 	model := &Model{}
-	model.FromDomain(domainUser) // Note: Password hashing in FromDomain will hash an empty string if not set
+	model.FromDomain(domainUser)
 
 	assert.Equal(t, uint(1), model.ID)
-	assert.Equal(t, "John Doe", model.Name)
-	assert.Equal(t, "john@example.com", model.Email)
-	assert.Equal(t, "123456789", model.Contact)
-	assert.Equal(t, "123.456.789-00", model.Document)
-	assert.True(t, model.IsActive)
 	assert.Equal(t, "user", model.Role)
-	assert.NotNil(t, model.Address)
-	assert.Equal(t, "Main St", model.Address.Street)
+	assert.Equal(t, uint(2), model.PersonID)
+	assert.Equal(t, "hashed_password", model.Password)
+	assert.Equal(t, "John Doe", model.Person.Name)
+	assert.Equal(t, "john@example.com", model.Person.Email)
 	assert.Equal(t, now, model.CreatedAt)
 	assert.False(t, model.DeletedAt.Valid)
 }
 
 func TestUserModel_FromDomain_Nil(t *testing.T) {
-	model := &Model{Name: "Old Name"}
+	model := &Model{Role: "admin"}
 	model.FromDomain(nil)
-	assert.Equal(t, "Old Name", model.Name)
+	assert.Equal(t, "admin", model.Role)
 }

@@ -13,6 +13,7 @@ import (
 type SessionDynamoClient interface {
 	PutItem(ctx context.Context, params *dynamodb.PutItemInput, optFns ...func(*dynamodb.Options)) (*dynamodb.PutItemOutput, error)
 	GetItem(ctx context.Context, params *dynamodb.GetItemInput, optFns ...func(*dynamodb.Options)) (*dynamodb.GetItemOutput, error)
+	DeleteItem(ctx context.Context, params *dynamodb.DeleteItemInput, optFns ...func(*dynamodb.Options)) (*dynamodb.DeleteItemOutput, error)
 }
 
 type SessionRepository struct {
@@ -38,6 +39,19 @@ func (r *SessionRepository) Save(ctx context.Context, s model.SessionModel) erro
 		return fmt.Errorf("failed to put session item: %w", err)
 	}
 
+	return nil
+}
+
+func (r *SessionRepository) DeleteBySessionID(ctx context.Context, sessionID string) error {
+	_, err := r.client.DeleteItem(ctx, &dynamodb.DeleteItemInput{
+		TableName: &r.tableName,
+		Key: map[string]types.AttributeValue{
+			"token_id": &types.AttributeValueMemberS{Value: sessionID},
+		},
+	})
+	if err != nil {
+		return fmt.Errorf("failed to delete session item: %w", err)
+	}
 	return nil
 }
 

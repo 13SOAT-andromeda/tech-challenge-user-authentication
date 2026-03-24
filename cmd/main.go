@@ -8,7 +8,7 @@ import (
 	services "tech-challenge-user-validation/internal/service"
 	"time"
 
-	"tech-challenge-user-validation/internal/adapters/database/model/address"
+	personModel "tech-challenge-user-validation/internal/adapters/database/model/person"
 	"tech-challenge-user-validation/internal/adapters/database/model/user"
 	"tech-challenge-user-validation/internal/adapters/database/repositories"
 	"tech-challenge-user-validation/internal/adapters/handlers"
@@ -23,11 +23,15 @@ import (
 )
 
 func main() {
-	// 1. JWT Secret
+	// 1. JWT Secrets
 	jwtSecret := os.Getenv("JWT_SECRET")
-
 	if jwtSecret == "" {
 		panic("JWT_SECRET is not set")
+	}
+
+	jwtRefreshSecret := os.Getenv("JWT_REFRESH_SECRET")
+	if jwtRefreshSecret == "" {
+		panic("JWT_REFRESH_SECRET is not set")
 	}
 
 	// 2. Postgres Connection (GORM)
@@ -36,27 +40,32 @@ func main() {
 	dbPassword := os.Getenv("DB_PASSWORD")
 	dbName := os.Getenv("DB_NAME")
 	dbPort := os.Getenv("DB_PORT")
+	dbSsl := os.Getenv("DB_SSLMODE")
 
-	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=disable",
-		dbHost, dbUser, dbPassword, dbName, dbPort)
+	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=%s",
+		dbHost, dbUser, dbPassword, dbName, dbPort, dbSsl)
 
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
 		log.Fatalf("failed to connect to postgres: %v", err)
 	}
 
-	err = db.AutoMigrate(&user.Model{}, &address.Model{})
+	err = db.AutoMigrate(&personModel.Model{}, &user.Model{})
 	if err != nil {
 		log.Printf("failed to auto migrate models: %v", err)
 	}
 
 	// 3. DynamoDB Connection
 	cfg, err := config.LoadDefaultConfig(context.TODO())
+
 	if err != nil {
 		log.Fatalf("unable to load SDK config, %v", err)
 	}
+
 	dynamoClient := dynamodb.NewFromConfig(cfg)
+
 	tableName := os.Getenv("DYNAMODB_TABLE_NAME")
+
 	if tableName == "" {
 		tableName = "user-auth-tokens"
 	}
@@ -65,7 +74,7 @@ func main() {
 	userRepo := repositories.NewUserRepository(db)
 	sessionRepo := repositories.NewSessionRepository(dynamoClient, tableName)
 
-	jwtSvc := jwtadapter.NewService(jwtSecret, 15*time.Minute, 24*time.Hour)
+	jwtSvc := jwtadapter.NewService(jwtSecret, jwtRefreshSecret, 15*time.Minute, 24*time.Hour)
 	sessionSvc := services.NewSessionService(sessionRepo)
 	authUseCase := usecases.NewAuthUseCase(userRepo, nil, sessionSvc, jwtSvc, jwtSecret)
 

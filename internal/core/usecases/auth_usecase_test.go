@@ -9,8 +9,6 @@ import (
 	"tech-challenge-user-validation/internal/core/domain"
 	"tech-challenge-user-validation/internal/core/ports"
 
-	"github.com/golang-jwt/jwt/v5"
-	"github.com/google/uuid"
 )
 
 type mockHasher struct{}
@@ -24,12 +22,20 @@ func (h *mockHasher) Compare(hashedPassword, password string) error {
 }
 
 type mockUserRepository struct {
-	getUserFunc func(ctx context.Context, document string) (*domain.User, error)
+	getUserFunc    func(ctx context.Context, document string) (*domain.User, error)
+	getUserByIDFunc func(ctx context.Context, id uint) (*domain.User, error)
 }
 
 func (m *mockUserRepository) GetByDocument(ctx context.Context, document string) (*domain.User, error) {
 	if m.getUserFunc != nil {
 		return m.getUserFunc(ctx, document)
+	}
+	return nil, nil
+}
+
+func (m *mockUserRepository) GetByID(ctx context.Context, id uint) (*domain.User, error) {
+	if m.getUserByIDFunc != nil {
+		return m.getUserByIDFunc(ctx, id)
 	}
 	return nil, nil
 }
@@ -48,6 +54,7 @@ func (m *mockTokenRepository) Save(ctx context.Context, pk string, token string,
 type mockSessionService struct {
 	createFunc func(ctx context.Context, sessionID string, userID string, expiresAt int64) (*ports.Session, error)
 	getFunc    func(ctx context.Context, sessionID string) (*ports.Session, error)
+	deleteFunc func(ctx context.Context, sessionID string) error
 }
 
 func (m *mockSessionService) Create(ctx context.Context, sessionID string, userID string, expiresAt int64) (*ports.Session, error) {
@@ -64,13 +71,21 @@ func (m *mockSessionService) GetByID(ctx context.Context, sessionID string) (*po
 	return nil, nil
 }
 
+func (m *mockSessionService) Delete(ctx context.Context, sessionID string) error {
+	if m.deleteFunc != nil {
+		return m.deleteFunc(ctx, sessionID)
+	}
+	return nil
+}
+
 type mockJWTService struct {
-	generateAccessTokenFunc  func(userID uint, email, role, sessionID string) (string, error)
-	generateRefreshTokenFunc func(userID uint) (string, error)
-	validateTokenFunc        func(tokenString string) (*ports.JWTClaims, error)
-	extractUserIDFunc        func(tokenString string) (uint, error)
-	isTokenExpiredFunc       func(tokenString string) bool
-	refreshAccessTokenFunc   func(refreshTokenString, email, role, sessionID string) (string, error)
+	generateAccessTokenFunc    func(userID uint, email, role, sessionID string) (string, error)
+	generateRefreshTokenFunc   func(userID uint) (string, error)
+	validateTokenFunc          func(tokenString string) (*ports.JWTClaims, error)
+	validateRefreshTokenFunc   func(tokenString string) (*ports.JWTClaims, error)
+	extractUserIDFunc          func(tokenString string) (uint, error)
+	isTokenExpiredFunc         func(tokenString string) bool
+	refreshAccessTokenFunc     func(refreshTokenString, email, role, sessionID string) (string, error)
 }
 
 func (m *mockJWTService) GenerateAccessToken(userID uint, email, role, sessionID string) (string, error) {
@@ -90,6 +105,17 @@ func (m *mockJWTService) GenerateRefreshToken(userID uint) (string, error) {
 func (m *mockJWTService) ValidateToken(tokenString string) (*ports.JWTClaims, error) {
 	if m.validateTokenFunc != nil {
 		return m.validateTokenFunc(tokenString)
+	}
+	return &ports.JWTClaims{
+		UserID:    1,
+		JTI:       "jti-default",
+		ExpiresAt: time.Now().Add(24 * time.Hour),
+	}, nil
+}
+
+func (m *mockJWTService) ValidateRefreshToken(tokenString string) (*ports.JWTClaims, error) {
+	if m.validateRefreshTokenFunc != nil {
+		return m.validateRefreshTokenFunc(tokenString)
 	}
 	return &ports.JWTClaims{
 		UserID:    1,
@@ -120,15 +146,19 @@ func (m *mockJWTService) RefreshAccessToken(refreshTokenString, email, role, ses
 }
 
 func makeUser(document, rawPassword string, active bool) *domain.User {
+	pass := domain.NewPasswordFromHash(rawPassword, &mockHasher{})
 	return &domain.User{
 		ID:       1,
-		Name:     "Barbara",
-		Email:    "barbara@exemplo.com",
-		Contact:  "11999999999",
 		Role:     "user",
-		Document: document,
-		IsActive: active,
-		Password: domain.NewPasswordFromHash(rawPassword, &mockHasher{}),
+		PersonID: 1,
+		Person: &domain.Person{
+			Name:     "Barbara",
+			Email:    "barbara@exemplo.com",
+			Contact:  "11999999999",
+			Document: document,
+			IsActive: active,
+		},
+		Password: &pass,
 	}
 }
 
@@ -174,8 +204,8 @@ func TestAuthUseCase_Login(t *testing.T) {
 			Document: "123.456.789-00",
 			Password: "123456",
 		})
-		if err == nil || err.Error() != "user not found" {
-			t.Fatalf("expected 'user not found' for inactive user, got: %v", err)
+		if err == nil || err.Error() != "invalid credentials" {
+			t.Fatalf("expected 'invalid credentials' for inactive user, got: %v", err)
 		}
 	})
 
@@ -190,8 +220,8 @@ func TestAuthUseCase_Login(t *testing.T) {
 			Document: "123.456.789-00",
 			Password: "wrong-password",
 		})
-		if err == nil || err.Error() != "user not found" {
-			t.Fatalf("expected 'user not found' for invalid password, got: %v", err)
+		if err == nil || err.Error() != "invalid credentials" {
+			t.Fatalf("expected 'invalid credentials' for invalid password, got: %v", err)
 		}
 	})
 
@@ -219,7 +249,7 @@ func TestAuthUseCase_Login(t *testing.T) {
 			generateRefreshTokenFunc: func(userID uint) (string, error) {
 				return "refresh-token-abc", nil
 			},
-			validateTokenFunc: func(tokenString string) (*ports.JWTClaims, error) {
+			validateRefreshTokenFunc: func(tokenString string) (*ports.JWTClaims, error) {
 				return &ports.JWTClaims{
 					UserID:    1,
 					JTI:       expectedJTI,
@@ -253,12 +283,6 @@ func TestAuthUseCase_Login(t *testing.T) {
 		if out.RefreshToken == "" {
 			t.Fatal("expected refresh token")
 		}
-		if out.JTI == "" {
-			t.Fatal("expected jti")
-		}
-		if out.JTI != expectedJTI {
-			t.Fatalf("expected jti %s, got %s", expectedJTI, out.JTI)
-		}
 		if capturedSessionID != expectedJTI {
 			t.Fatalf("expected session create with jti %s, got %s", expectedJTI, capturedSessionID)
 		}
@@ -268,49 +292,3 @@ func TestAuthUseCase_Login(t *testing.T) {
 	})
 }
 
-func TestAuthUseCase_Validate(t *testing.T) {
-	ctx := context.Background()
-	secret := "secret"
-	jti := uuid.New().String()
-
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"jti": jti,
-		"exp": time.Now().Add(time.Hour).Unix(),
-	})
-	tokenString, _ := token.SignedString([]byte(secret))
-
-	t.Run("should succeed if token is valid and session exists", func(t *testing.T) {
-		sessionSvc := &mockSessionService{
-			getFunc: func(ctx context.Context, sessionID string) (*ports.Session, error) {
-				if sessionID == jti {
-					return &ports.Session{ID: jti}, nil
-				}
-				return nil, nil
-			},
-		}
-		uc := NewAuthUseCase(nil, nil, sessionSvc, &mockJWTService{}, secret)
-		valid, err := uc.Validate(ctx, tokenString)
-		if err != nil {
-			t.Fatalf("unexpected error: %v", err)
-		}
-		if !valid {
-			t.Fatal("expected token to be valid")
-		}
-	})
-
-	t.Run("should fail if session does not exist", func(t *testing.T) {
-		sessionSvc := &mockSessionService{
-			getFunc: func(ctx context.Context, sessionID string) (*ports.Session, error) {
-				return nil, nil
-			},
-		}
-		uc := NewAuthUseCase(nil, nil, sessionSvc, &mockJWTService{}, secret)
-		valid, err := uc.Validate(ctx, tokenString)
-		if err == nil || err.Error() != "session not found or revoked" {
-			t.Fatalf("expected 'session not found or revoked' error, got: %v", err)
-		}
-		if valid {
-			t.Fatal("expected token to be invalid")
-		}
-	})
-}

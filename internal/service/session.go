@@ -12,6 +12,7 @@ import (
 type sessionRepository interface {
 	Save(ctx context.Context, s model.SessionModel) error
 	FindBySessionID(ctx context.Context, sessionID string) (*model.SessionModel, error)
+	DeleteBySessionID(ctx context.Context, sessionID string) error
 }
 
 type sessionService struct {
@@ -47,6 +48,13 @@ func (s *sessionService) Create(ctx context.Context, sessionID string, userID st
 		UserID:    userID,
 		ExpiresAt: expiresAt,
 	}, nil
+}
+
+func (s *sessionService) Delete(ctx context.Context, sessionID string) error {
+	if sessionID == "" {
+		return errors.New("invalid session ID")
+	}
+	return s.repo.DeleteBySessionID(ctx, sessionID)
 }
 
 func (s *sessionService) GetByID(ctx context.Context, sessionID string) (*ports.Session, error) {
