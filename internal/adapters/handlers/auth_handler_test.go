@@ -127,10 +127,14 @@ func TestAuthHandler_Handle(t *testing.T) {
 	h := NewAuthHandler(uc)
 
 	t.Run("should return 400 if request body is invalid", func(t *testing.T) {
-		req := events.APIGatewayProxyRequest{
-			HTTPMethod: http.MethodPost,
-			Path:       "/sessions",
-			Body:       "",
+		req := events.APIGatewayV2HTTPRequest{
+			RawPath: "/sessions",
+			RequestContext: events.APIGatewayV2HTTPRequestContext{
+				HTTP: events.APIGatewayV2HTTPRequestContextHTTPDescription{
+					Method: http.MethodPost,
+				},
+			},
+			Body: "",
 		}
 		resp, err := h.Handle(ctx, req)
 		if err != nil {
@@ -142,10 +146,14 @@ func TestAuthHandler_Handle(t *testing.T) {
 	})
 
 	t.Run("should return 200 and access_token/refresh_token/jti", func(t *testing.T) {
-		req := events.APIGatewayProxyRequest{
-			HTTPMethod: http.MethodPost,
-			Path:       "/sessions",
-			Body:       `{"document":"123.456.789-00","password":"123456"}`,
+		req := events.APIGatewayV2HTTPRequest{
+			RawPath: "/sessions",
+			RequestContext: events.APIGatewayV2HTTPRequestContext{
+				HTTP: events.APIGatewayV2HTTPRequestContextHTTPDescription{
+					Method: http.MethodPost,
+				},
+			},
+			Body: `{"document":"123.456.789-00","password":"123456"}`,
 		}
 
 		resp, err := h.Handle(ctx, req)
