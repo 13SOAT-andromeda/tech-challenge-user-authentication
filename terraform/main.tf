@@ -54,6 +54,7 @@ resource "aws_lambda_function" "this" {
       DD_SERVICE          = "tech-challenge-user-authentication"
       DD_SITE             = "us5.datadoghq.com"
       DD_VERSION          = "1.0.0"
+      DD_APPSEC_SCA_ENABLED = "false"
     }
   }
 
