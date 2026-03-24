@@ -49,3 +49,16 @@ resource "aws_lambda_function" "this" {
     command = ["bootstrap"]
   }
 }
+
+resource "aws_lambda_function_url" "this" {
+  function_name      = aws_lambda_function.this.function_name
+  authorization_type = "NONE"
+}
+
+resource "aws_lambda_permission" "allow_public_url" {
+  statement_id           = "AllowPublicAccess"
+  action                 = "lambda:InvokeFunctionUrl"
+  function_name          = aws_lambda_function.this.function_name
+  principal              = "*"
+  function_url_auth_type = "NONE"
+}
