@@ -48,6 +48,7 @@ resource "aws_lambda_function" "this" {
       DB_PORT             = var.db_port
       DB_SSLMODE          = var.db_sslmode
       DYNAMODB_TABLE_NAME = var.dynamodb_table_name
+      DYNAMODB_ENDPOINT   = var.dynamodb_endpoint
       PROJECT_ENV         = var.project_env
     }
   }

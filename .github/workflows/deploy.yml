@@ -70,6 +70,13 @@ jobs:
             --query "DBInstances[0].Endpoint.Address" --output text)
           echo "DB_HOST=$RDS_ADDRESS" >> $GITHUB_ENV
 
+      - name: Obter endpoint do DynamoDB
+        working-directory: .
+        run: |
+          DYNAMO_ENDPOINT=$(aws dynamodb describe-endpoints \
+            --query "Endpoints[0].Address" --output text)
+          echo "DYNAMODB_ENDPOINT=https://$DYNAMO_ENDPOINT" >> $GITHUB_ENV
+
       - name: Terraform Init
         run: |
           terraform init \
@@ -88,4 +95,5 @@ jobs:
           TF_VAR_db_port: ${{ secrets.DB_PORT }}
           TF_VAR_db_sslmode: ${{ secrets.DB_SSLMODE }}
           TF_VAR_dynamodb_table_name: ${{ secrets.DYNAMO_AUTH_TABLE }}
+          TF_VAR_dynamodb_endpoint: ${{ env.DYNAMODB_ENDPOINT }}
         run: terraform apply -auto-approve

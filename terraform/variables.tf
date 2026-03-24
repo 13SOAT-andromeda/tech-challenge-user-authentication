@@ -15,6 +15,11 @@ variable "dynamodb_table_name" {
   default     = "user-authentication-token"
 }
 
+variable "dynamodb_endpoint" {
+  description = "The endpoint URL of the DynamoDB service"
+  type        = string
+}
+
 variable "project_env" {
   description = "Project environment"
   type        = string
