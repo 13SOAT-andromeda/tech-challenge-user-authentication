@@ -15,6 +15,8 @@ import (
 	jwtadapter "tech-challenge-user-validation/internal/adapters/services/jwt"
 	"tech-challenge-user-validation/internal/core/usecases"
 
+	ddlambda "github.com/DataDog/dd-trace-go/contrib/aws/datadog-lambda-go/v2"
+
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
@@ -79,8 +81,7 @@ func main() {
 	authUseCase := usecases.NewAuthUseCase(userRepo, nil, sessionSvc, jwtSvc, jwtSecret)
 
 	authHandler := handlers.NewAuthHandler(authUseCase)
-
 	// 5. Start Lambda
 	log.Println("Starting Lambda...")
-	lambda.Start(authHandler.Handle)
+	lambda.Start(ddlambda.WrapFunction(authHandler.Handle, nil))
 }

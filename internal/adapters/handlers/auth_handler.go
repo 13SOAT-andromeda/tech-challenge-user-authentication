@@ -8,6 +8,7 @@ import (
 	"tech-challenge-user-validation/internal/core/ports"
 	"tech-challenge-user-validation/internal/core/usecases"
 
+	"github.com/DataDog/dd-trace-go/v2/ddtrace/tracer"
 	"github.com/aws/aws-lambda-go/events"
 )
 
@@ -22,6 +23,8 @@ func NewAuthHandler(uc *usecases.AuthUseCase) *AuthHandler {
 }
 
 func (h *AuthHandler) Handle(ctx context.Context, req events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
+	s, _ := tracer.StartSpanFromContext(ctx, "child.span")
+	defer s.Finish()
 	switch {
 	case req.HTTPMethod == http.MethodPost && req.Path == "/sessions":
 		return h.handleLogin(ctx, req)
