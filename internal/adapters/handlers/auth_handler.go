@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"strings"
 
 	"tech-challenge-user-validation/internal/core/ports"
 	"tech-challenge-user-validation/internal/core/usecases"
@@ -22,22 +23,45 @@ func NewAuthHandler(uc *usecases.AuthUseCase) *AuthHandler {
 	}
 }
 
-func (h *AuthHandler) Handle(ctx context.Context, req events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
-	s, _ := tracer.StartSpanFromContext(ctx, "child.span")
-	defer s.Finish()
+func (h *AuthHandler) Handle(ctx context.Context, req events.APIGatewayV2HTTPRequest) (events.APIGatewayV2HTTPResponse, error) {
+	method := req.RequestContext.HTTP.Method
+	path := req.RawPath
+
+	span, ctx := tracer.StartSpanFromContext(ctx, "http.request",
+		tracer.Tag("http.method", method),
+		tracer.Tag("http.url", path),
+	)
+	defer span.Finish()
+
+	var (
+		resp  events.APIGatewayV2HTTPResponse
+		err   error
+		route string
+	)
+
 	switch {
-	case req.HTTPMethod == http.MethodPost && req.Path == "/sessions":
-		return h.handleLogin(ctx, req)
-	case req.HTTPMethod == http.MethodPost && req.Path == "/sessions/refresh":
-		return h.handleRefresh(ctx, req)
-	case req.HTTPMethod == http.MethodDelete && req.Path == "/sessions/logout":
-		return h.handleLogout(ctx, req)
+	case method == http.MethodPost && strings.Contains(path, "/sessions/refresh"):
+		route = "POST /sessions/refresh"
+		resp, err = h.handleRefresh(ctx, req)
+	case method == http.MethodPost && strings.Contains(path, "/sessions"):
+		route = "POST /sessions"
+		resp, err = h.handleLogin(ctx, req)
+	case method == http.MethodDelete && strings.Contains(path, "/sessions/logout"):
+		route = "DELETE /sessions/logout"
+		resp, err = h.handleLogout(ctx, req)
 	default:
-		return h.errorResponse(http.StatusNotFound, "route not found"), nil
+		route = "unknown"
+		resp = h.errorResponse(http.StatusNotFound, "route not found")
 	}
+
+	span.SetTag("http.route", route)
+	span.SetTag("resource.name", route)
+	span.SetTag("http.status_code", resp.StatusCode)
+
+	return resp, err
 }
 
-func (h *AuthHandler) handleLogin(ctx context.Context, req events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
+func (h *AuthHandler) handleLogin(ctx context.Context, req events.APIGatewayV2HTTPRequest) (events.APIGatewayV2HTTPResponse, error) {
 	var input ports.LoginInput
 
 	if err := json.Unmarshal([]byte(req.Body), &input); err != nil {
@@ -61,14 +85,14 @@ func (h *AuthHandler) handleLogin(ctx context.Context, req events.APIGatewayProx
 		return h.errorResponse(http.StatusInternalServerError, "failed to serialize response"), nil
 	}
 
-	return events.APIGatewayProxyResponse{
+	return events.APIGatewayV2HTTPResponse{
 		StatusCode: http.StatusOK,
 		Body:       string(body),
 		Headers:    map[string]string{"Content-Type": "application/json"},
 	}, nil
 }
 
-func (h *AuthHandler) handleRefresh(ctx context.Context, req events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
+func (h *AuthHandler) handleRefresh(ctx context.Context, req events.APIGatewayV2HTTPRequest) (events.APIGatewayV2HTTPResponse, error) {
 	var input ports.RefreshInput
 
 	if err := json.Unmarshal([]byte(req.Body), &input); err != nil {
@@ -88,18 +112,15 @@ func (h *AuthHandler) handleRefresh(ctx context.Context, req events.APIGatewayPr
 		return h.errorResponse(http.StatusInternalServerError, "failed to serialize response"), nil
 	}
 
-	return events.APIGatewayProxyResponse{
+	return events.APIGatewayV2HTTPResponse{
 		StatusCode: http.StatusOK,
 		Body:       string(body),
 		Headers:    map[string]string{"Content-Type": "application/json"},
 	}, nil
 }
 
-func (h *AuthHandler) handleLogout(ctx context.Context, req events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
-	authHeader := req.Headers["Authorization"]
-	if authHeader == "" {
-		authHeader = req.Headers["authorization"]
-	}
+func (h *AuthHandler) handleLogout(ctx context.Context, req events.APIGatewayV2HTTPRequest) (events.APIGatewayV2HTTPResponse, error) {
+	authHeader := req.Headers["authorization"]
 
 	const bearerPrefix = "Bearer "
 	if len(authHeader) <= len(bearerPrefix) {
@@ -111,16 +132,16 @@ func (h *AuthHandler) handleLogout(ctx context.Context, req events.APIGatewayPro
 		return h.errorResponse(http.StatusUnauthorized, err.Error()), nil
 	}
 
-	return events.APIGatewayProxyResponse{
+	return events.APIGatewayV2HTTPResponse{
 		StatusCode: http.StatusNoContent,
 	}, nil
 }
 
-func (h *AuthHandler) errorResponse(statusCode int, message string) events.APIGatewayProxyResponse {
+func (h *AuthHandler) errorResponse(statusCode int, message string) events.APIGatewayV2HTTPResponse {
 	body, _ := json.Marshal(map[string]string{
 		"error": message,
 	})
-	return events.APIGatewayProxyResponse{
+	return events.APIGatewayV2HTTPResponse{
 		StatusCode: statusCode,
 		Body:       string(body),
 		Headers: map[string]string{
