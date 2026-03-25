@@ -1,41 +1,65 @@
-# Go Gin Lambda on LocalStack
+# Tech Challenge: Autenticação de Usuário
 
-This project is a simple Go application using the Gin framework, designed to run as an AWS Lambda function.
+Este repositório provisiona uma infraestrutura serverless robusta para o serviço de autenticação de usuários, integrando uma aplicação Go (Gin) como AWS Lambda, com persistência de dados no RDS (PostgreSQL) e gerenciamento de sessões no DynamoDB.
 
-## Prerequisites
+## Tecnologias Utilizadas
 
-- Go 1.22+ (Installed in `$HOME/sdk/go` by this script)
-- Docker and Docker Compose
-- `awslocal` CLI
+- **Linguagem**: Go (1.25.0)
+- **Infraestrutura**: Terraform, AWS Lambda, Amazon ECR, Amazon RDS (PostgreSQL), Amazon DynamoDB
+- **Ambiente Local**: LocalStack, Docker, Docker Compose
+- **Monitoramento**: Datadog
 
-## Structure
+## Passos para Execução e Deploy
 
-- `go-gin-lambda/main.go`: The Go application logic.
-- `go-gin-lambda/docker-compose.yml`: LocalStack configuration.
-- `deploy.sh`: Script to build, zip, and deploy to LocalStack.
-- `Makefile`: Alternative build/deploy tool.
+### Pré-requisitos
 
-## How to Run
+- **Go**: Versão 1.25.0 ou superior.
+- **Docker & Docker Compose**: Necessários para o ambiente LocalStack.
+- **AWS CLI / awslocal**: Ferramentas de linha de comando para interação com AWS.
+- **Terraform**: Para o deploy da infraestrutura real.
 
-1. **Start LocalStack:**
+### Execução Local (via LocalStack)
+
+1. **Suba os serviços locais**: Utilize o comando abaixo para iniciar o LocalStack e o banco de dados PostgreSQL.
    ```bash
-   cd go-gin-lambda
-   docker-compose up -d
-   cd ..
+   make local
+   ```
+   *Este comando automatiza o `docker-compose up`, o provisionamento inicial (IAM, DynamoDB, API Gateway) e o deploy da Lambda.*
+
+2. **Popule o banco de dados (opcional)**: Insira usuários de teste para validar o login.
+   ```bash
+   make seed
    ```
 
-2. **Deploy the application:**
+3. **Teste o endpoint**: Use o comando pronto para simular uma requisição de autenticação.
    ```bash
-   ./deploy.sh
+   make curl
    ```
 
-3. **Test the endpoint:**
-   The `deploy.sh` script will output a `curl` command. It will look something like:
+### Deploy Real na AWS
+
+1. **Inicialize o Terraform**: Configure o backend (S3) e os providers.
    ```bash
-   curl http://localhost:4566/restapis/<API_ID>/dev/_user_request_/hello
+   cd terraform
+   terraform init
    ```
 
-## Development
+2. **Planeje as mudanças**: Verifique quais recursos serão criados ou alterados.
+   ```bash
+   terraform plan -var-file="suas-variaveis.tfvars"
+   ```
 
-To modify the response, edit `go-gin-lambda/main.go` and run `./deploy.sh` again.
+3. **Aplique a infraestrutura**: Execute o deploy para a nuvem.
+   ```bash
+   terraform apply -var-file="suas-variaveis.tfvars"
+   ```
 
+*Nota: O backend utiliza S3 para persistência do estado do Terraform (tfstate), garantindo consistência em ambientes compartilhados.*
+
+## Diagrama da Arquitetura
+
+![Arquitetura da Base](.github/misc/lambda-authentication-architecture.png)
+
+## APIs (Swagger/Postman)
+
+*(em branco)*
