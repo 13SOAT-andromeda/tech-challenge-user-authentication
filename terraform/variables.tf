@@ -71,3 +71,13 @@ variable "dd_key" {
   type        = string
   sensitive   = true
 }
+
+variable "vpc_id" {
+  description = "VPC ID where the Lambda will be deployed"
+  type        = string
+}
+
+variable "private_subnet_ids" {
+  description = "Private Subnet IDs for the Lambda function"
+  type        = list(string)
+}
