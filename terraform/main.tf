@@ -26,10 +26,29 @@ data "aws_iam_role" "lab_role" {
   name = "LabRole"
 }
 
+data "aws_vpc" "vpc" {
+  filter {
+    name   = "tag:Name"
+    values = ["vpc"]
+  }
+}
+
+data "aws_subnets" "private" {
+  filter {
+    name   = "vpc-id"
+    values = [data.aws_vpc.vpc.id]
+  }
+
+  filter {
+    name   = "tag:Name"
+    values = ["*private*"]
+  }
+}
+
 resource "aws_security_group" "lambda" {
   name        = "tech-challenge-user-auth-lambda-sg"
   description = "Security group for user auth lambda"
-  vpc_id      = var.vpc_id
+  vpc_id      = data.aws_vpc.vpc.id
 
   egress {
     from_port   = 0
@@ -55,7 +74,7 @@ resource "aws_lambda_function" "this" {
   memory_size = 128
 
   vpc_config {
-    subnet_ids         = var.private_subnet_ids
+    subnet_ids         = data.aws_subnets.private.ids
     security_group_ids = [aws_security_group.lambda.id]
   }
 
