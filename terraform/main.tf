@@ -26,11 +26,16 @@ data "aws_iam_role" "lab_role" {
   name = "LabRole"
 }
 
+data "aws_db_instance" "database" {
+  db_instance_identifier = var.db_name
+}
+
+data "aws_db_subnet_group" "database_subnet_group" {
+  name = data.aws_db_instance.database.db_subnet_group
+}
+
 data "aws_vpc" "vpc" {
-  filter {
-    name   = "tag:Name"
-    values = ["vpc"]
-  }
+  id = data.aws_db_subnet_group.database_subnet_group.vpc_id
 }
 
 data "aws_subnets" "private" {
