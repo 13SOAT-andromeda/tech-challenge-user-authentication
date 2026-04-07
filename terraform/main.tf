@@ -67,6 +67,16 @@ resource "aws_security_group" "lambda" {
   }
 }
 
+resource "aws_vpc_security_group_ingress_rule" "allow_lambda_to_rds" {
+  security_group_id = data.aws_db_instance.database.vpc_security_groups[0]
+  description       = "Allow Lambda to connect to RDS"
+
+  from_port                    = 5432
+  to_port                      = 5432
+  ip_protocol                  = "tcp"
+  referenced_security_group_id = aws_security_group.lambda.id
+}
+
 resource "aws_lambda_function" "this" {
   function_name = "tech-challenge-user-authentication"
   role          = data.aws_iam_role.lab_role.arn
