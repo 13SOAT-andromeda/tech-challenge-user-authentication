@@ -34,7 +34,7 @@ localstack-up:
 	@echo "Waiting for LocalStack..."
 	@until docker exec localstack curl -sf http://localhost:4566/_localstack/health 2>/dev/null | grep -q '"lambda": "available"'; do \
 		printf '.'; sleep 2; \
-	done	
+	done
 	@echo ""
 	@echo "Services are ready."
 
@@ -218,14 +218,35 @@ sessions-flush:
 
 # ─── SAM Local ─────────────────────────────────────────────────────────────────
 
+.PHONY: sam-env
+sam-env:
+	@echo '{"UserAuthFunction":{' \
+		'"JWT_SECRET":"$(JWT_SECRET)",' \
+		'"JWT_REFRESH_SECRET":"$(JWT_REFRESH_SECRET)",' \
+		'"DB_HOST":"$(DB_HOST)",' \
+		'"DB_USER":"$(DB_USER)",' \
+		'"DB_PASSWORD":"$(DB_PASSWORD)",' \
+		'"DB_NAME":"$(DB_NAME)",' \
+		'"DB_PORT":"$(DB_PORT)",' \
+		'"DYNAMODB_TABLE_NAME":"$(DYNAMODB_TABLE_NAME)",' \
+		'"DD_TRACE_ENABLED":"$(DD_TRACE_ENABLED)",' \
+		'"DD_API_KEY":"$(DD_API_KEY)",' \
+		'"DD_SITE":"$(DD_SITE)",' \
+		'"AWS_ENDPOINT_URL":"$(AWS_ENDPOINT_URL)",' \
+		'"AWS_ACCESS_KEY_ID":"$(AWS_ACCESS_KEY_ID)",' \
+		'"AWS_SECRET_ACCESS_KEY":"$(AWS_SECRET_ACCESS_KEY)",' \
+		'"AWS_REGION":"$(AWS_REGION)"' \
+		'}}' > sam-env.json
+
 .PHONY: sam
-sam:
+sam: sam-env
 	sam build
 	sam local start-api \
 		--port $(SAM_PORT) \
-		--docker-network tech-challenge \
+		--docker-network administrative-api \
+		--env-vars sam-env.json \
 		--debug \
-		--warm-containers EAGER	
+		--warm-containers EAGER
 
 # ─── Shortcuts ─────────────────────────────────────────────────────────────────
 .PHONY: local
@@ -233,7 +254,7 @@ local: localstack-up setup-infra deploy
 
 .PHONY: clean
 clean:
-	rm -f $(FUNCTION_BINARY_NAME) $(FUNCTION_ZIP_NAME)
+	rm -f $(FUNCTION_BINARY_NAME) $(FUNCTION_ZIP_NAME) sam-env.json
 
 .PHONY: test
 test:
@@ -251,12 +272,13 @@ help:
 	@echo "  make zip              Build and zip the binary"
 	@echo "  make deploy           Build, zip and deploy to LocalStack"
 	@echo "  make redeploy         Re-zip and push code only (faster)"
-	@echo "  make seed             Insert test user into Postgres"
+	@echo "  make seed             Insert test users into Postgres"
 	@echo "  make curl             POST /sessions via API Gateway"
 	@echo "  make invoke           Direct Lambda invoke (no API Gateway)"
 	@echo "  make logs             Show function metadata"
 	@echo "  make sessions         List all sessions in DynamoDB"
 	@echo "  make sessions-flush   Delete all sessions from DynamoDB"
+	@echo "  make sam              Start SAM local API (port $(SAM_PORT))"
 	@echo "  make clean            Remove build artifacts"
 	@echo "  make test             Run all tests"
 	@echo ""
