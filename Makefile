@@ -157,17 +157,6 @@ redeploy: zip
 		--region $(AWS_REGION)
 	@echo "Redeploy complete."
 
-# ─── Seed ──────────────────────────────────────────────────────────────────────
-.PHONY: seed
-seed:
-	@echo "Seeding database..."
-	docker exec -i localstack-postgres psql -U $(DB_USER) -d $(DB_NAME) -v ON_ERROR_STOP=1 < scripts/seed.sql
-	@echo "Seed complete. Password for all users: Admin123!"
-	@echo "  customer@example.com      (document: 11122233344)"
-	@echo "  attendant@example.com     (document: 22233344455)"
-	@echo "  mechanic@example.com      (document: 33344455566)"
-	@echo "  administrator@example.com (document: 44455566677)"
-
 # ─── Test ──────────────────────────────────────────────────────────────────────
 .PHONY: curl
 curl:
@@ -272,7 +261,6 @@ help:
 	@echo "  make zip              Build and zip the binary"
 	@echo "  make deploy           Build, zip and deploy to LocalStack"
 	@echo "  make redeploy         Re-zip and push code only (faster)"
-	@echo "  make seed             Insert test users into Postgres"
 	@echo "  make curl             POST /sessions via API Gateway"
 	@echo "  make invoke           Direct Lambda invoke (no API Gateway)"
 	@echo "  make logs             Show function metadata"
