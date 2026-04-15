@@ -1,0 +1,55 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: User Authentication Lambda
+
+Globals:
+  Function:
+    Runtime: provided.al2023
+    Architectures:
+      - x86_64
+    Timeout: 30
+
+Resources:
+  UserAuthFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: user-auth-function
+      CodeUri: cmd/
+      Handler: bootstrap
+      Environment:
+        Variables:
+          JWT_SECRET: ""
+          JWT_REFRESH_SECRET: ""
+          DB_HOST: ""
+          DB_USER: ""
+          DB_PASSWORD: ""
+          DB_NAME: ""
+          DB_PORT: ""
+          DYNAMODB_TABLE_NAME: ""
+          DD_TRACE_ENABLED: "false"
+          DD_API_KEY: ""
+          DD_SITE: ""
+          AWS_ENDPOINT_URL: ""
+      Events:
+        Login:
+          Type: HttpApi
+          Properties:
+            Path: /sessions
+            Method: post
+        RefreshSession:
+          Type: HttpApi
+          Properties:
+            Path: /sessions/refresh
+            Method: post
+        Logout:
+          Type: HttpApi
+          Properties:
+            Path: /sessions/logout
+            Method: delete
+        CatchAll:
+          Type: HttpApi
+          Properties:
+            Path: /{proxy+}
+            Method: any
+    Metadata:
+      BuildMethod: go1.x
