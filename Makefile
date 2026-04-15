@@ -1,10 +1,8 @@
+include .env
+export
+
 # ─── Config ───────────────────────────────────────────────────────────────────
-BINARY        := bootstrap
-ZIP           := function.zip
-FUNCTION_NAME := user-auth-function
 RUNTIME       := provided.al2023
-REGION        := us-east-1
-ROLE_ARN      := arn:aws:iam::000000000000:role/lambda-role
 API_NAME      := user-auth-api
 API_STAGE     := local
 
@@ -12,32 +10,22 @@ API_STAGE     := local
 # networking issues. The zip is copied into the container before deploy.
 AWSLOCAL = docker exec localstack awslocal
 
-# ─── Environment Variables ─────────────────────────────────────────────────────
-# Override any of these on the command line: make deploy JWT_SECRET=mysecret
-JWT_SECRET    ?= local-dev-secret
-DB_HOST       ?= postgres
-DB_USER       ?= postgres
-DB_PASSWORD   ?= postgres
-DB_NAME       ?= authdb
-DB_PORT       ?= 5432
-DYNAMO_TABLE  ?= user-auth-tokens
-
 # Login parameters for make curl / make invoke
 DOCUMENT      ?= 123.456.789-00
 PASSWORD      ?= Admin123!
 
-ENV_VARS = Variables="{JWT_SECRET=$(JWT_SECRET),DB_HOST=$(DB_HOST),DB_USER=$(DB_USER),DB_PASSWORD=$(DB_PASSWORD),DB_NAME=$(DB_NAME),DB_PORT=$(DB_PORT),DYNAMODB_TABLE_NAME=$(DYNAMO_TABLE),AWS_ENDPOINT_URL=http://localstack:4566,AWS_ACCESS_KEY_ID=test,AWS_SECRET_ACCESS_KEY=test,AWS_REGION=$(REGION)}"
+ENV_VARS = Variables="{JWT_SECRET=$(JWT_SECRET),DB_HOST=$(DB_HOST),DB_USER=$(DB_USER),DB_PASSWORD=$(DB_PASSWORD),DB_NAME=$(DB_NAME),DB_PORT=$(DB_PORT),DYNAMODB_TABLE_NAME=$(DYNAMODB_TABLE_NAME),AWS_ENDPOINT_URL=http://localstack:4566,AWS_ACCESS_KEY_ID=test,AWS_SECRET_ACCESS_KEY=test,AWS_REGION=$(AWS_REGION)}"
 
 # ─── Build ─────────────────────────────────────────────────────────────────────
 .PHONY: build
 build:
-	GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -o $(BINARY) ./cmd/main.go
-	@echo "Build complete: $(BINARY)"
+	GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -o $(FUNCTION_BINARY_NAME) ./cmd/main.go
+	@echo "Build complete: $(FUNCTION_BINARY_NAME)"
 
 .PHONY: zip
 zip: build
-	zip -j $(ZIP) $(BINARY)
-	@echo "Package ready: $(ZIP)"
+	zip -j $(FUNCTION_ZIP_NAME) $(FUNCTION_BINARY_NAME)
+	@echo "Package ready: $(FUNCTION_ZIP_NAME)"
 
 # ─── LocalStack ────────────────────────────────────────────────────────────────
 .PHONY: localstack-up
@@ -46,12 +34,7 @@ localstack-up:
 	@echo "Waiting for LocalStack..."
 	@until docker exec localstack curl -sf http://localhost:4566/_localstack/health 2>/dev/null | grep -q '"lambda": "available"'; do \
 		printf '.'; sleep 2; \
-	done
-	@echo ""
-	@echo "Waiting for PostgreSQL..."
-	@until docker exec localstack-postgres pg_isready -U postgres > /dev/null 2>&1; do \
-		printf '.'; sleep 2; \
-	done
+	done	
 	@echo ""
 	@echo "Services are ready."
 
@@ -77,20 +60,20 @@ setup-aws:
 	$(AWSLOCAL) iam create-role \
 		--role-name lambda-role \
 		--assume-role-policy-document '{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Principal":{"Service":"lambda.amazonaws.com"},"Action":"sts:AssumeRole"}]}' \
-		--region $(REGION) 2>/dev/null || true
+		--region $(AWS_REGION) 2>/dev/null || true
 
 	@echo "Creating DynamoDB table..."
 	$(AWSLOCAL) dynamodb create-table \
-		--table-name $(DYNAMO_TABLE) \
+		--table-name $(DYNAMODB_TABLE_NAME) \
 		--attribute-definitions AttributeName=token_id,AttributeType=S \
 		--key-schema AttributeName=token_id,KeyType=HASH \
 		--provisioned-throughput ReadCapacityUnits=5,WriteCapacityUnits=5 \
-		--region $(REGION) 2>/dev/null || true
+		--region $(AWS_REGION) 2>/dev/null || true
 
 .PHONY: setup-api-gateway
 setup-api-gateway:
 	@EXISTING=$$($(AWSLOCAL) apigateway get-rest-apis \
-		--region $(REGION) \
+		--region $(AWS_REGION) \
 		--query 'items[?name==`$(API_NAME)`].id' --output text | awk '{print $$1}'); \
 	if [ -n "$$EXISTING" ]; then \
 		echo "API Gateway already exists: $$EXISTING"; \
@@ -99,36 +82,36 @@ setup-api-gateway:
 		echo "Creating API Gateway..."; \
 		API_ID=$$($(AWSLOCAL) apigateway create-rest-api \
 			--name $(API_NAME) \
-			--region $(REGION) \
+			--region $(AWS_REGION) \
 			--query 'id' --output text); \
 		ROOT_ID=$$($(AWSLOCAL) apigateway get-resources \
 			--rest-api-id $$API_ID \
-			--region $(REGION) \
+			--region $(AWS_REGION) \
 			--query 'items[?path==`/`].id' --output text); \
 		RESOURCE_ID=$$($(AWSLOCAL) apigateway create-resource \
 			--rest-api-id $$API_ID \
 			--parent-id $$ROOT_ID \
 			--path-part sessions \
-			--region $(REGION) \
+			--region $(AWS_REGION) \
 			--query 'id' --output text); \
 		$(AWSLOCAL) apigateway put-method \
 			--rest-api-id $$API_ID \
 			--resource-id $$RESOURCE_ID \
 			--http-method POST \
 			--authorization-type NONE \
-			--region $(REGION) > /dev/null; \
+			--region $(AWS_REGION) > /dev/null; \
 		$(AWSLOCAL) apigateway put-integration \
 			--rest-api-id $$API_ID \
 			--resource-id $$RESOURCE_ID \
 			--http-method POST \
 			--type AWS_PROXY \
 			--integration-http-method POST \
-			--uri "arn:aws:apigateway:$(REGION):lambda:path/2015-03-31/functions/arn:aws:lambda:$(REGION):000000000000:function:$(FUNCTION_NAME)/invocations" \
-			--region $(REGION) > /dev/null; \
+			--uri "arn:aws:apigateway:$(AWS_REGION):lambda:path/2015-03-31/functions/arn:aws:lambda:$(AWS_REGION):000000000000:function:$(FUNCTION_NAME)/invocations" \
+			--region $(AWS_REGION) > /dev/null; \
 		$(AWSLOCAL) apigateway create-deployment \
 			--rest-api-id $$API_ID \
 			--stage-name $(API_STAGE) \
-			--region $(REGION) > /dev/null; \
+			--region $(AWS_REGION) > /dev/null; \
 		echo "API Gateway ready."; \
 		echo "Endpoint: http://localhost:4566/restapis/$$API_ID/$(API_STAGE)/_user_request_/sessions"; \
 	fi
@@ -137,41 +120,41 @@ setup-api-gateway:
 .PHONY: deploy
 deploy: zip
 	@echo "Copying zip into LocalStack container..."
-	docker cp $(ZIP) localstack:/tmp/$(ZIP)
+	docker cp $(FUNCTION_ZIP_NAME) localstack:/tmp/$(FUNCTION_ZIP_NAME)
 
 	@echo "Deploying $(FUNCTION_NAME)..."
-	@if $(AWSLOCAL) lambda get-function --function-name $(FUNCTION_NAME) --region $(REGION) > /dev/null 2>&1; then \
+	@if $(AWSLOCAL) lambda get-function --function-name $(FUNCTION_NAME) --region $(AWS_REGION) > /dev/null 2>&1; then \
 		echo "Updating function code..."; \
 		$(AWSLOCAL) lambda update-function-code \
 			--function-name $(FUNCTION_NAME) \
-			--zip-file fileb:///tmp/$(ZIP) \
-			--region $(REGION); \
+			--zip-file fileb:///tmp/$(FUNCTION_ZIP_NAME) \
+			--region $(AWS_REGION); \
 		echo "Updating environment variables..."; \
 		$(AWSLOCAL) lambda update-function-configuration \
 			--function-name $(FUNCTION_NAME) \
 			--environment "$(ENV_VARS)" \
-			--region $(REGION); \
+			--region $(AWS_REGION); \
 	else \
 		echo "Creating function..."; \
 		$(AWSLOCAL) lambda create-function \
 			--function-name $(FUNCTION_NAME) \
 			--runtime $(RUNTIME) \
-			--handler $(BINARY) \
-			--role $(ROLE_ARN) \
-			--zip-file fileb:///tmp/$(ZIP) \
+			--handler $(FUNCTION_BINARY_NAME) \
+			--role $(AWS_ROLE_ARN) \
+			--zip-file fileb:///tmp/$(FUNCTION_ZIP_NAME) \
 			--environment "$(ENV_VARS)" \
-			--region $(REGION); \
+			--region $(AWS_REGION); \
 	fi
 	@echo "Deploy complete."
 
 .PHONY: redeploy
 redeploy: zip
 	@echo "Redeploying code only..."
-	docker cp $(ZIP) localstack:/tmp/$(ZIP)
+	docker cp $(FUNCTION_ZIP_NAME) localstack:/tmp/$(FUNCTION_ZIP_NAME)
 	$(AWSLOCAL) lambda update-function-code \
 		--function-name $(FUNCTION_NAME) \
-		--zip-file fileb:///tmp/$(ZIP) \
-		--region $(REGION)
+		--zip-file fileb:///tmp/$(FUNCTION_ZIP_NAME) \
+		--region $(AWS_REGION)
 	@echo "Redeploy complete."
 
 # ─── Seed ──────────────────────────────────────────────────────────────────────
@@ -189,7 +172,7 @@ seed:
 .PHONY: curl
 curl:
 	@API_ID=$$($(AWSLOCAL) apigateway get-rest-apis \
-		--region $(REGION) \
+		--region $(AWS_REGION) \
 		--query 'items[?name==`$(API_NAME)`].id' --output text | awk '{print $$1}'); \
 	docker exec localstack curl --silent --location --request POST \
 		"http://localhost:4566/restapis/$$API_ID/$(API_STAGE)/_user_request_/sessions" \
@@ -201,7 +184,7 @@ invoke:
 	$(AWSLOCAL) lambda invoke \
 		--function-name $(FUNCTION_NAME) \
 		--payload '{"httpMethod":"POST","path":"/sessions","body":"{\"document\":\"$(DOCUMENT)\",\"password\":\"$(PASSWORD)\"}"}' \
-		--region $(REGION) \
+		--region $(AWS_REGION) \
 		/tmp/response.json
 	docker exec localstack cat /tmp/response.json
 
@@ -209,40 +192,40 @@ invoke:
 logs:
 	$(AWSLOCAL) lambda get-function \
 		--function-name $(FUNCTION_NAME) \
-		--region $(REGION)
+		--region $(AWS_REGION)
 
 .PHONY: sessions
 sessions:
 	$(AWSLOCAL) dynamodb scan \
-		--table-name $(DYNAMO_TABLE) \
-		--region $(REGION)
+		--table-name $(DYNAMODB_TABLE_NAME) \
+		--region $(AWS_REGION)
 
 .PHONY: sessions-flush
 sessions-flush:
-	@echo "Flushing all sessions from $(DYNAMO_TABLE)..."
+	@echo "Flushing all sessions from $(DYNAMODB_TABLE_NAME)..."
 	@$(AWSLOCAL) dynamodb scan \
-		--table-name $(DYNAMO_TABLE) \
-		--region $(REGION) \
+		--table-name $(DYNAMODB_TABLE_NAME) \
+		--region $(AWS_REGION) \
 		--query 'Items[*].token_id.S' \
 		--output text | tr '\t' '\n' | while read id; do \
 			$(AWSLOCAL) dynamodb delete-item \
-				--table-name $(DYNAMO_TABLE) \
+				--table-name $(DYNAMODB_TABLE_NAME) \
 				--key "{\"token_id\":{\"S\":\"$$id\"}}" \
-				--region $(REGION); \
+				--region $(AWS_REGION); \
 			echo "Deleted: $$id"; \
 		done
 	@echo "Done."
 
 # ─── SAM Local ─────────────────────────────────────────────────────────────────
-SAM_PORT ?= 8081
 
 .PHONY: sam
 sam:
 	sam build
 	sam local start-api \
 		--port $(SAM_PORT) \
-		--docker-network local-net \
-		--warm-containers EAGER
+		--docker-network tech-challenge \
+		--debug \
+		--warm-containers EAGER	
 
 # ─── Shortcuts ─────────────────────────────────────────────────────────────────
 .PHONY: local
@@ -250,7 +233,7 @@ local: localstack-up setup-infra deploy
 
 .PHONY: clean
 clean:
-	rm -f $(BINARY) $(ZIP)
+	rm -f $(FUNCTION_BINARY_NAME) $(FUNCTION_ZIP_NAME)
 
 .PHONY: test
 test:
