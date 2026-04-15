@@ -52,7 +52,7 @@ Thumbs.db
 
 # Gemini
 .gemini
-.localstack/cache
+.localstack/
 .aws-sam/
 sam-env.json
 
