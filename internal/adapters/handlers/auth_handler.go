@@ -27,6 +27,10 @@ func (h *AuthHandler) Handle(ctx context.Context, req events.APIGatewayV2HTTPReq
 	method := req.RequestContext.HTTP.Method
 	path := req.RawPath
 
+	if path == "" {
+		path = req.RequestContext.HTTP.Path
+	}
+
 	span, ctx := tracer.StartSpanFromContext(ctx, "http.request",
 		tracer.Tag("http.method", method),
 		tracer.Tag("http.url", path),
@@ -43,12 +47,12 @@ func (h *AuthHandler) Handle(ctx context.Context, req events.APIGatewayV2HTTPReq
 	case method == http.MethodPost && strings.Contains(path, "/sessions/refresh"):
 		route = "POST /sessions/refresh"
 		resp, err = h.handleRefresh(ctx, req)
-	case method == http.MethodPost && strings.Contains(path, "/sessions"):
-		route = "POST /sessions"
-		resp, err = h.handleLogin(ctx, req)
 	case method == http.MethodDelete && strings.Contains(path, "/sessions/logout"):
 		route = "DELETE /sessions/logout"
 		resp, err = h.handleLogout(ctx, req)
+	case method == http.MethodPost && strings.Contains(path, "/sessions"):
+		route = "POST /sessions"
+		resp, err = h.handleLogin(ctx, req)
 	default:
 		route = "unknown"
 		resp = h.errorResponse(http.StatusNotFound, "route not found")

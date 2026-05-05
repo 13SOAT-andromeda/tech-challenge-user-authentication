@@ -1,65 +1,137 @@
 # Tech Challenge: Autenticação de Usuário
 
-Este repositório provisiona uma infraestrutura serverless robusta para o serviço de autenticação de usuários, integrando uma aplicação Go (Gin) como AWS Lambda, com persistência de dados no RDS (PostgreSQL) e gerenciamento de sessões no DynamoDB.
+Lambda serverless responsável pela autenticação de usuários do sistema. Recebe credenciais (documento + senha), valida contra o banco PostgreSQL do serviço **administrative-api** e gerencia sessões (access token + refresh token) no DynamoDB.
 
-## Tecnologias Utilizadas
+## Tecnologias
 
-- **Linguagem**: Go (1.25.0)
-- **Infraestrutura**: Terraform, AWS Lambda, Amazon ECR, Amazon RDS (PostgreSQL), Amazon DynamoDB
-- **Ambiente Local**: LocalStack, Docker, Docker Compose
-- **Monitoramento**: Datadog
+- **Linguagem**: Go 1.25
+- **Runtime**: AWS Lambda (`provided.al2023`) via imagem Docker
+- **Banco de dados**: PostgreSQL (do serviço administrative-api) + DynamoDB (sessões)
+- **Infra**: Terraform, Amazon ECR, Amazon RDS, Amazon DynamoDB
+- **Ambiente local**: LocalStack, AWS SAM CLI, Docker
+- **CI/CD**: GitHub Actions (build → push ECR → Terraform apply)
+- **Monitoramento**: Datadog (Lambda Extension)
 
-## Passos para Execução e Deploy
+## Endpoints
 
-### Pré-requisitos
+| Método | Rota | Descrição |
+|--------|------|-----------|
+| `POST` | `/sessions` | Login — recebe `document` e `password`, retorna tokens |
+| `POST` | `/sessions/refresh` | Refresh — recebe `refresh_token`, retorna novos tokens |
+| `DELETE` | `/sessions/logout` | Logout — recebe `Authorization: Bearer <token>` |
 
-- **Go**: Versão 1.25.0 ou superior.
-- **Docker & Docker Compose**: Necessários para o ambiente LocalStack.
-- **AWS CLI / awslocal**: Ferramentas de linha de comando para interação com AWS.
-- **Terraform**: Para o deploy da infraestrutura real.
+## Pré-requisitos
 
-### Execução Local (via LocalStack)
+- **Go** 1.25+
+- **Docker** e **Docker Compose**
+- **AWS SAM CLI** (`sam`)
+- **LocalStack** com `LOCALSTACK_AUTH_TOKEN` válido (requer API key)
+- Serviço **administrative-api** rodando via Docker Compose (fornece o PostgreSQL e a rede `administrative-api`)
 
-1. **Suba os serviços locais**: Utilize o comando abaixo para iniciar o LocalStack e o banco de dados PostgreSQL.
-   ```bash
-   make local
-   ```
-   *Este comando automatiza o `docker-compose up`, o provisionamento inicial (IAM, DynamoDB, API Gateway) e o deploy da Lambda.*
+## Execução Local
 
-2. **Popule o banco de dados (opcional)**: Insira usuários de teste para validar o login.
-   ```bash
-   make seed
-   ```
+### 1. Configurar variáveis de ambiente
 
-3. **Teste o endpoint**: Use o comando pronto para simular uma requisição de autenticação.
-   ```bash
-   make curl
-   ```
+Copie o arquivo de exemplo e preencha os valores:
 
-### Deploy Real na AWS
+```bash
+cp .env.example .env
+```
 
-1. **Inicialize o Terraform**: Configure o backend (S3) e os providers.
-   ```bash
-   cd terraform
-   terraform init
-   ```
+As principais variáveis são:
 
-2. **Planeje as mudanças**: Verifique quais recursos serão criados ou alterados.
-   ```bash
-   terraform plan -var-file="suas-variaveis.tfvars"
-   ```
+| Variável | Descrição |
+|----------|-----------|
+| `LOCALSTACK_AUTH_TOKEN` | Token de autenticação do LocalStack |
+| `JWT_SECRET` | Segredo para assinatura de access tokens |
+| `JWT_REFRESH_SECRET` | Segredo para assinatura de refresh tokens |
+| `DB_HOST` | Host do PostgreSQL (ex: `db` na rede Docker) |
+| `DB_USER` / `DB_PASSWORD` / `DB_NAME` / `DB_PORT` | Credenciais do banco |
+| `DYNAMODB_TABLE_NAME` | Nome da tabela de sessões (padrão: `user-auth-tokens`) |
 
-3. **Aplique a infraestrutura**: Execute o deploy para a nuvem.
-   ```bash
-   terraform apply -var-file="suas-variaveis.tfvars"
-   ```
+### 2. Subir dependências
 
-*Nota: O backend utiliza S3 para persistência do estado do Terraform (tfstate), garantindo consistência em ambientes compartilhados.*
+Certifique-se de que o serviço **administrative-api** está rodando (ele cria a rede Docker `administrative-api` e o banco PostgreSQL):
 
-## Diagrama da Arquitetura
+```bash
+# No repositório administrative-api
+docker compose up -d
+```
+
+### 3. Subir infraestrutura local (LocalStack)
+
+Inicia o LocalStack, provisiona IAM role + tabela DynamoDB + API Gateway e faz deploy da Lambda:
+
+```bash
+make local
+```
+
+### 4. Iniciar SAM local
+
+Builda o binário com SAM e sobe um servidor HTTP local na porta `8081`:
+
+```bash
+make sam
+```
+
+Os endpoints ficam disponíveis em `http://localhost:8081/sessions`.
+
+### 5. Testar
+
+Requisição via API Gateway (LocalStack):
+
+```bash
+make curl
+```
+
+Ou invocação direta da Lambda:
+
+```bash
+make invoke
+```
+
+Para credenciais diferentes:
+
+```bash
+make curl DOCUMENT=11122233344 PASSWORD=Admin123!
+```
+
+## Comandos disponíveis
+
+Execute `make help` para a lista completa. Os principais:
+
+| Comando | Descrição |
+|---------|-----------|
+| `make local` | Sobe LocalStack + provisiona infra + deploy da Lambda |
+| `make sam` | Builda e inicia SAM local (porta 8081) |
+| `make deploy` | Build, zip e deploy no LocalStack |
+| `make redeploy` | Atualiza apenas o código (mais rápido) |
+| `make seed` | Insere usuários de teste no PostgreSQL |
+| `make curl` | POST /sessions via API Gateway |
+| `make invoke` | Invocação direta da Lambda |
+| `make sessions` | Lista sessões no DynamoDB |
+| `make sessions-flush` | Remove todas as sessões |
+| `make test` | Executa testes |
+| `make clean` | Remove artefatos de build |
+
+## Deploy (AWS)
+
+O deploy real é feito via **GitHub Actions** (push na `main`):
+
+1. Build da imagem Docker e push para o Amazon ECR
+2. Terraform apply — provisiona Lambda, DynamoDB, e demais recursos
+
+Para deploy manual:
+
+```bash
+cd terraform
+terraform init \
+  -backend-config="bucket=SEU_BUCKET" \
+  -backend-config="region=us-east-1"
+
+terraform apply
+```
+
+## Arquitetura
 
 ![Arquitetura da Base](.github/misc/lambda-authentication-architecture.png)
-
-## APIs (Swagger/Postman)
-
-*(em branco)*

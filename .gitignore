@@ -37,7 +37,6 @@
 
 # Local environment files
 .env
-.env.*
 
 # Editors and OS files
 .DS_Store
@@ -53,10 +52,12 @@ Thumbs.db
 
 # Gemini
 .gemini
-.localstack/cache
+.localstack/
 .aws-sam/
+sam-env.json
 
 # Agents
 condutor/
 openspec/
 .claude/
+bootstrap
