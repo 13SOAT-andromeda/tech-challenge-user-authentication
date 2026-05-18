@@ -3,13 +3,13 @@ package handlers
 import (
 	"context"
 	"encoding/json"
+	"log"
 	"net/http"
 	"strings"
 
 	"tech-challenge-user-validation/internal/core/ports"
 	"tech-challenge-user-validation/internal/core/usecases"
 
-	"github.com/DataDog/dd-trace-go/v2/ddtrace/tracer"
 	"github.com/aws/aws-lambda-go/events"
 )
 
@@ -27,11 +27,7 @@ func (h *AuthHandler) Handle(ctx context.Context, req events.APIGatewayV2HTTPReq
 	method := req.RequestContext.HTTP.Method
 	path := req.RawPath
 
-	span, ctx := tracer.StartSpanFromContext(ctx, "http.request",
-		tracer.Tag("http.method", method),
-		tracer.Tag("http.url", path),
-	)
-	defer span.Finish()
+	log.Printf("Received request: %s %s", method, path)
 
 	var (
 		resp  events.APIGatewayV2HTTPResponse
@@ -54,17 +50,17 @@ func (h *AuthHandler) Handle(ctx context.Context, req events.APIGatewayV2HTTPReq
 		resp = h.errorResponse(http.StatusNotFound, "route not found")
 	}
 
-	span.SetTag("http.route", route)
-	span.SetTag("resource.name", route)
-	span.SetTag("http.status_code", resp.StatusCode)
+	log.Printf("Route: %s, Status: %d, Error: %v", route, resp.StatusCode, err)
 
 	return resp, err
 }
 
 func (h *AuthHandler) handleLogin(ctx context.Context, req events.APIGatewayV2HTTPRequest) (events.APIGatewayV2HTTPResponse, error) {
+	log.Printf("Handling login...")
 	var input ports.LoginInput
 
 	if err := json.Unmarshal([]byte(req.Body), &input); err != nil {
+		log.Printf("Failed to unmarshal body: %v", err)
 		return h.errorResponse(http.StatusBadRequest, "invalid request body"), nil
 	}
 
@@ -86,9 +82,11 @@ func (h *AuthHandler) handleLogin(ctx context.Context, req events.APIGatewayV2HT
 	}
 
 	return events.APIGatewayV2HTTPResponse{
-		StatusCode: http.StatusOK,
-		Body:       string(body),
-		Headers:    map[string]string{"Content-Type": "application/json"},
+		StatusCode:        http.StatusOK,
+		Body:              string(body),
+		Headers:           map[string]string{"Content-Type": "application/json"},
+		Cookies:           []string{},
+		MultiValueHeaders: map[string][]string{},
 	}, nil
 }
 
@@ -113,9 +111,11 @@ func (h *AuthHandler) handleRefresh(ctx context.Context, req events.APIGatewayV2
 	}
 
 	return events.APIGatewayV2HTTPResponse{
-		StatusCode: http.StatusOK,
-		Body:       string(body),
-		Headers:    map[string]string{"Content-Type": "application/json"},
+		StatusCode:        http.StatusOK,
+		Body:              string(body),
+		Headers:           map[string]string{"Content-Type": "application/json"},
+		Cookies:           []string{},
+		MultiValueHeaders: map[string][]string{},
 	}, nil
 }
 
@@ -133,7 +133,9 @@ func (h *AuthHandler) handleLogout(ctx context.Context, req events.APIGatewayV2H
 	}
 
 	return events.APIGatewayV2HTTPResponse{
-		StatusCode: http.StatusNoContent,
+		StatusCode:        http.StatusNoContent,
+		Cookies:           []string{},
+		MultiValueHeaders: map[string][]string{},
 	}, nil
 }
 
@@ -147,5 +149,7 @@ func (h *AuthHandler) errorResponse(statusCode int, message string) events.APIGa
 		Headers: map[string]string{
 			"Content-Type": "application/json",
 		},
+		Cookies:           []string{},
+		MultiValueHeaders: map[string][]string{},
 	}
 }

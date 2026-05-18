@@ -18,6 +18,7 @@ import (
 	ddlambda "github.com/DataDog/dd-trace-go/contrib/aws/datadog-lambda-go/v2"
 
 	"github.com/aws/aws-lambda-go/lambda"
+	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"gorm.io/driver/postgres"
@@ -44,6 +45,8 @@ func main() {
 	dbPort := os.Getenv("DB_PORT")
 	dbSsl := os.Getenv("DB_SSLMODE")
 
+	log.Printf("Connecting to DB: host=%s user=%s dbname=%s port=%s sslmode=%s", dbHost, dbUser, dbName, dbPort, dbSsl)
+
 	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=%s",
 		dbHost, dbUser, dbPassword, dbName, dbPort, dbSsl)
 
@@ -58,7 +61,23 @@ func main() {
 	}
 
 	// 3. DynamoDB Connection
-	cfg, err := config.LoadDefaultConfig(context.TODO())
+	customEndpoint := os.Getenv("DYNAMODB_ENDPOINT")
+	var cfg aws.Config
+
+	if customEndpoint != "" {
+		cfg, err = config.LoadDefaultConfig(context.TODO(),
+			config.WithEndpointResolverWithOptions(aws.EndpointResolverWithOptionsFunc(
+				func(service, region string, options ...interface{}) (aws.Endpoint, error) {
+					return aws.Endpoint{
+						URL:               customEndpoint,
+						HostnameImmutable: true,
+					}, nil
+				})),
+		)
+	} else {
+		cfg, err = config.LoadDefaultConfig(context.TODO())
+	}
+
 
 	if err != nil {
 		log.Fatalf("unable to load SDK config, %v", err)
@@ -83,5 +102,9 @@ func main() {
 	authHandler := handlers.NewAuthHandler(authUseCase)
 	// 5. Start Lambda
 	log.Println("Starting Lambda...")
-	lambda.Start(ddlambda.WrapFunction(authHandler.Handle, nil))
+	if os.Getenv("PROJECT_ENV") == "localstack" {
+		lambda.Start(authHandler.Handle)
+	} else {
+		lambda.Start(ddlambda.WrapFunction(authHandler.Handle, nil))
+	}
 }
